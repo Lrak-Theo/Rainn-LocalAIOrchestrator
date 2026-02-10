@@ -128,55 +128,51 @@ def init_db():
         VALUES (?, ?)
     """, [
         (
-            "invoice_compliance_visual_text",
-            "Invoice compliance pipeline with both visual risk chart and written summary."
+            "research_paper_analyser_and_insight_gatherer",
+            "You are a graduate student. Your task is to analyse the given research papers and follow the set instructions in each stages to gather important points."
         ),
         (
-            "invoice_compliance_visual_only",
-            "Invoice compliance pipeline with visual risk chart only."
+            "law_and_compliance_extractor",
+            "You are a senior legal analyst working in a corporate law firm. You are tasked with extracting key compliances and clauses and to process them in a process."
         ),
         (
-            "invoice_compliance_text_only",
-            "Invoice compliance pipeline with refined written summary only."
+            "invoice_cleaner",
+            "You are an accountant working in a FinTech company. Your job is to read through all the given invoices in many formats and to seperate and group them based on the given instructions."
         )
     ])
 
     # Fetch IDs for seeded TaskDefs
-    cursor.execute("SELECT TaskDef_ID FROM TaskDef WHERE TaskDef_Name='invoice_compliance_visual_text'")
-    invoice_visual_text_id = cursor.fetchone()[0]
+    cursor.execute("SELECT TaskDef_ID FROM TaskDef WHERE TaskDef_Name='research_paper_analyser_and_insight_gatherer'")
+    research_paper_id = cursor.fetchone()[0]
 
-    cursor.execute("SELECT TaskDef_ID FROM TaskDef WHERE TaskDef_Name='invoice_compliance_visual_only'")
-    invoice_visual_only_id = cursor.fetchone()[0]
+    cursor.execute("SELECT TaskDef_ID FROM TaskDef WHERE TaskDef_Name='law_and_compliance_extractor'")
+    law_compliance_id = cursor.fetchone()[0]
 
-    cursor.execute("SELECT TaskDef_ID FROM TaskDef WHERE TaskDef_Name='invoice_compliance_text_only'")
-    invoice_text_only_id = cursor.fetchone()[0]
+    cursor.execute("SELECT TaskDef_ID FROM TaskDef WHERE TaskDef_Name='invoice_cleaner'")
+    invoice_cleaner_id = cursor.fetchone()[0]
 
     # Seed Stages
     cursor.executemany("""
         INSERT INTO TaskStageDef (TaskDef_ID_FK, TaskStageDef_Type, TaskStageDef_Description)
         VALUES (?, ?, ?)
     """, [
-        # Invoice compliance pipeline (visual + text)
-        (invoice_visual_text_id, "input", "Receive invoice files for compliance checks."),
-        (invoice_visual_text_id, "extract", "Extract supplier, invoice number, dates, totals, and line items."),
-        (invoice_visual_text_id, "validate", "Check for missing fields, inconsistent totals, and date/payment issues."),
-        (invoice_visual_text_id, "risk_flags", "List compliance risks or late-payment concerns with short reasons."),
-        (invoice_visual_text_id, "graph", "Visualise key risks and totals as a chart (JSON chart spec)."),
-        (invoice_visual_text_id, "output", "Provide a concise compliance summary and next steps."),
+        # Research paper analyser (4 stages)
+        (research_paper_id, "input", "Receive research papers in text or PDF form."),
+        (research_paper_id, "extract", "Extract key points: claims, methods, datasets, and metrics."),
+        (research_paper_id, "compare", "Compare papers for themes, agreements, and disagreements."),
+        (research_paper_id, "output", "Provide a concise summary of insights."),
 
-        # Invoice compliance pipeline (visual only)
-        (invoice_visual_only_id, "input", "Receive invoice files for compliance checks."),
-        (invoice_visual_only_id, "extract", "Extract supplier, invoice number, dates, totals, and line items."),
-        (invoice_visual_only_id, "validate", "Check for missing fields, inconsistent totals, and date/payment issues."),
-        (invoice_visual_only_id, "risk_flags", "List compliance risks or late-payment concerns with short reasons."),
-        (invoice_visual_only_id, "graph", "Visualise key risks and totals as a chart (JSON chart spec)."),
+        # Law and compliance extractor (3 stages)
+        (law_compliance_id, "input", "Receive legal/compliance documents."),
+        (law_compliance_id, "extract", "Extract key clauses, obligations, parties, and regulations."),
+        (law_compliance_id, "output", "Provide a concise compliance summary with any risks."),
 
-        # Invoice compliance pipeline (text only)
-        (invoice_text_only_id, "input", "Receive invoice files for compliance checks."),
-        (invoice_text_only_id, "extract", "Extract supplier, invoice number, dates, totals, and line items."),
-        (invoice_text_only_id, "validate", "Check for missing fields, inconsistent totals, and date/payment issues."),
-        (invoice_text_only_id, "risk_flags", "List compliance risks or late-payment concerns with short reasons."),
-        (invoice_text_only_id, "output", "Provide a refined compliance summary with clear next steps."),
+        # Invoice cleaner (5 stages)
+        (invoice_cleaner_id, "input", "Receive invoice files in multiple formats."),
+        (invoice_cleaner_id, "extract", "Extract vendor, invoice numbers, dates, totals, and line items."),
+        (invoice_cleaner_id, "validate", "Check totals, missing fields, and inconsistencies."),
+        (invoice_cleaner_id, "format", "Group and format cleaned invoice data into a table."),
+        (invoice_cleaner_id, "graph", "Visualise the findings using a graph"),
     ])
 
     # Seed Agent Processes (pre-defined configured agents)
@@ -186,24 +182,24 @@ def init_db():
     """, [
         (
             1,
-            "Invoice Compliance (Visual + Summary)",
-            "You are a compliance analyst. Be strict, accurate, and concise.",
+            "Research Paper Analyser and Insight Gatherer",
+            "You are a graduate student. Your task is to analyse the given research papers and follow the set instructions in each stages to gather important points.",
             "llama3.1:8b",
-            invoice_visual_text_id
+            research_paper_id
         ),
         (
             1,
-            "Invoice Risk Visualiser (Visual Only)",
-            "Surface compliance risks and make them easy to understand at a glance.",
-            "gemma3:4b",
-            invoice_visual_only_id
+            "Law and Compliance Extractor",
+            "You are a senior legal analyst working in a corporate law firm. You are tasked with extracting key compliances and clauses and to process them in a process.",
+            "llama3.1:8b",
+            law_compliance_id
         ),
         (
             1,
-            "Invoice Compliance Summary (Text Only)",
-            "Provide a clean, refined compliance summary with next steps.",
+            "Invoice Cleaner",
+            "You are an accountant working in a FinTech company. Your job is to read through all the given invoices in many formats and to seperate and group them based on the given instructions.",
             "llama3.1:8b",
-            invoice_text_only_id
+            invoice_cleaner_id
         ),
     ])
 

@@ -247,10 +247,22 @@ def agent_builder_page():
     Uses the working zip-style create_process signature.
     """
     taskdefs = taskdef_service.list_taskdefs()
-    template_taskdefs = [
-        t for t in taskdefs
-        if not (t.TaskDef_Name or "").startswith("Custom -")
-    ]
+    process_service = AgentProcessService()
+    processes = process_service.list_processes()
+    name_by_taskdef = {}
+    for p in processes:
+        if getattr(p, "Operation_Selected", None) and getattr(p, "Agent_Name", None):
+            name_by_taskdef[p.Operation_Selected] = p.Agent_Name
+    template_taskdefs = []
+    for t in taskdefs:
+        if (t.TaskDef_Name or "").startswith("Custom -"):
+            continue
+        template_taskdefs.append({
+            "TaskDef_ID": t.TaskDef_ID,
+            "TaskDef_Name": t.TaskDef_Name,
+            "TaskDef_Description": t.TaskDef_Description,
+            "Display_Name": name_by_taskdef.get(t.TaskDef_ID, t.TaskDef_Name)
+        })
 
     selected_taskdef = (
         request.args.get("operation_selected") or

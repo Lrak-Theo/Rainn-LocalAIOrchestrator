@@ -13,11 +13,6 @@ Purpose:
 List saved agent flows and provide primary actions.
 ========================================== -->
 
-<!-- ======================================================
- Page Header
- Displays page title, description, and primary action
- to create a new agent process (Iteration 4 preview).
-====================================================== -->
 <div class="page-header d-print-none">
   <div class="row g-2 align-items-center">
     <div class="col">
@@ -26,7 +21,6 @@ List saved agent flows and provide primary actions.
       <div class="text-secondary">Your customized agents and runs.</div>
     </div>
 
-    <!-- Create Agent + Import Flow -->
     <div class="col-auto ms-auto d-print-none">
       <div class="btn-list">
         <a href="{{ url_for('agent_builder_page') }}" class="btn btn-primary">
@@ -60,13 +54,8 @@ List saved agent flows and provide primary actions.
 </div>
 {% endif %}
 
-<!-- ======================================================
- Agent Processes Card
- Wraps table and contextual guidance for running agents.
-====================================================== -->
 <div class="card">
 
-  <!-- Card Header / Hint -->
   <div class="card-body">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="fw-semibold">Agent Processes</div>
@@ -76,35 +65,21 @@ List saved agent flows and provide primary actions.
     </div>
   </div>
 
-  <!-- ======================================================
-   Agent Processes Table
-   Dynamically rendered using Jinja.
-   Displays metadata and available actions per process.
-  ======================================================= -->
   <div class="table-responsive">
     <table class="table card-table table-vcenter text-nowrap">
 
-      <!-- Table Headings -->
       <thead>
         <tr>
-          <th>ID</th>
           <th>Agent Name</th>
           <th class="text-secondary">Model</th>
-          <th class="text-secondary">Task</th>
-          <th class="text-secondary">Created</th>
           <th class="w-1"></th>
         </tr>
       </thead>
 
-      <!-- Table Body -->
       <tbody>
       {% for p in processes %}
         <tr>
 
-          <!-- Process ID -->
-          <td class="text-secondary">{{ p.Process_ID }}</td>
-
-          <!-- Agent Name + Primer Preview -->
           <td>
             <div class="fw-semibold">{{ p.Agent_Name }}</div>
             <div class="text-secondary text-truncate" style="max-width: 520px;">
@@ -112,44 +87,26 @@ List saved agent flows and provide primary actions.
             </div>
           </td>
 
-          <!-- AI Model -->
           <td>{{ p.AI_Model }}</td>
 
-          <!-- Operation / Task -->
-          <td>
-            {% set td = taskdef_map.get(p.Operation_Selected) %}
-            {{ td.TaskDef_Name if td else p.Operation_Selected }}
-          </td>
-
-          <!-- Creation Timestamp -->
-          <td class="text-secondary">{{ p.Created_At }}</td>
-
-          <!-- ======================================================
-               Actions Column
-               Run, Edit, and Delete operations.
-          ======================================================= -->
           <td>
             <div class="btn-list flex-nowrap">
 
-              <!-- Run Agent Process -->
               <a href="{{ url_for('agent_runner_page', process_id=p.Process_ID) }}"
                  class="btn btn-primary btn-sm">
                 <i class="ti ti-player-play me-1"></i>Run
               </a>
 
-              <!-- Export Flow -->
               <a href="{{ url_for('export_flow', process_id=p.Process_ID) }}"
                  class="btn btn-outline-secondary btn-sm">
                 <i class="ti ti-download me-1"></i>Export
               </a>
 
-              <!-- Edit Agent Process -->
               <a href="{{ url_for('update_process', process_id=p.Process_ID) }}"
                  class="btn btn-outline-secondary btn-sm">
                 <i class="ti ti-edit me-1"></i>Edit
               </a>
 
-              <!-- Delete Agent Process (POST) -->
               <form method="POST"
                     action="{{ url_for('delete_process', process_id=p.Process_ID) }}"
                     style="display:inline;">

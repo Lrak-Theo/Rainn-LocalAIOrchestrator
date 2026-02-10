@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Rainn | Create Agent flows{% endblock %}
+{% block title %}Rainn | Create Agent Flow{% endblock %}
 
 {% block content %}
 
@@ -13,16 +13,11 @@ Purpose:
 Step-by-step builder for creating agent processes.
 ========================================== -->
 
-<!-- ======================================================
- Builder Header (Tabler Page Header)
- Shows page context and notes that this is retained for
- Iteration 3 demos while previewing Iteration 4 direction.
-====================================================== -->
 <div class="page-header d-print-none">
   <div class="row g-2 align-items-center">
     <div class="col">
-      <div class="page-pretitle">Create Agent flows</div>
-      <h2 class="page-title">Create an agent process</h2>
+      <div class="page-pretitle">Create Agent Flows</div>
+      <h2 class="page-title">Create an agent flow</h2>
       <div class="text-secondary">Step-by-step builder for non-technical users.</div>
     </div>
   </div>
@@ -55,17 +50,8 @@ Step-by-step builder for creating agent processes.
   </div>
 </div>
 
-<!-- ======================================================
- Main Layout (Form + Stage Preview)
- Left: Agent builder form
- Right: Stage preview for selected operation/template
-====================================================== -->
 <div class="row row-cards">
 
-  <!-- ======================================================
-   Agent Builder Form Card
-   Submits to same route using POST.
-  ======================================================= -->
   <div class="col-12 {% if step == 'template' or step == 'details' %}col-lg-12{% else %}col-lg-8{% endif %}">
     <div class="card">
       <div class="card-body">
@@ -116,7 +102,6 @@ Step-by-step builder for creating agent processes.
           }
         </style>
 
-        <!-- Form submits to the same route using POST -->
         <form method="POST" class="row g-3" id="builderForm">
 
           {% if error_message %}
@@ -130,28 +115,17 @@ Step-by-step builder for creating agent processes.
             <div class="fw-semibold">Agent details</div>
             <div class="text-secondary small">These settings apply to every stage.</div>
           </div>
-          <!-- ===============================
-               Agent Name Input
-          =============================== -->
           <div class="col-12">
             <label class="form-label">Agent name</label>
             <input type="text" class="form-control" name="agent_name" value="{{ agent_name or '' }}" required>
           </div>
 
-          <!-- ===============================
-               Agent Primer Input
-               Captures role, tone, constraints, and output expectations.
-          =============================== -->
           <div class="col-12">
             <label class="form-label">Agent primer</label>
             <textarea class="form-control" name="agent_priming" rows="3" required>{{ agent_priming or '' }}</textarea>
             <div class="form-hint">Describe the agent role, tone, constraints, and what “good output” looks like.</div>
           </div>
 
-          <!-- ===============================
-               AI Model Selection (Ollama)
-               Uses exact Ollama model id (will change in future iterations to a simpler name selection).
-          =============================== -->
           <div class="col-12 col-md-6">
             <label class="form-label">AI model (Ollama)</label>
             <select name="ai_model" class="form-select" required>
@@ -186,7 +160,7 @@ Step-by-step builder for creating agent processes.
                      tabindex="0"
                      data-template-id="{{ t.TaskDef_ID }}">
                   <div class="card-body">
-                    <div class="fw-semibold">{{ t.TaskDef_Name }}</div>
+                    <div class="fw-semibold">{{ t.Display_Name or t.TaskDef_Name }}</div>
                     <div class="text-secondary small">{{ t.TaskDef_Description }}</div>
                   </div>
                 </div>
@@ -320,8 +294,8 @@ Step-by-step builder for creating agent processes.
               {% if from_scratch %}
                 Custom template from scratch
               {% elif selected_taskdef %}
-                {% set selected = (taskdefs | selectattr("TaskDef_ID", "equalto", selected_taskdef) | list | first) %}
-                Blueprint: {{ selected.TaskDef_Name if selected else selected_taskdef }}
+                {% set selected_template = (template_taskdefs | selectattr("TaskDef_ID", "equalto", selected_taskdef) | list | first) %}
+                Blueprint: {{ (selected_template.Display_Name if selected_template else None) or (selected_template.TaskDef_Name if selected_template else None) or selected_taskdef }}
               {% else %}
                 No blueprint selected
               {% endif %}
@@ -338,10 +312,6 @@ Step-by-step builder for creating agent processes.
           </div>
           {% endif %}
 
-          <!-- ===============================
-               Submit Button
-               Triggers saving the agent process definition.
-          =============================== -->
           <div class="col-12">
             {% if step == 'details' %}
               <button type="submit" name="action" value="next" class="btn btn-primary">
@@ -364,10 +334,6 @@ Step-by-step builder for creating agent processes.
             {% endif %}
           </div>
 
-          <!-- ===============================
-               Success Message
-               Displayed only when agent process is created.
-          =============================== -->
           {% if agent_saved %}
             <div class="col-12">
               <div class="alert alert-success mb-0">
@@ -381,11 +347,6 @@ Step-by-step builder for creating agent processes.
     </div>
   </div>
 
-  <!-- ======================================================
-   Stages Preview Panel
-   Displays stages for the selected operation/template.
-   If no stages are available, shows a hint message.
-  ======================================================= -->
   {% if step != 'template' and step != 'details' %}
   <div class="col-12 col-lg-4">
     <div class="card">

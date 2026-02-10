@@ -13,11 +13,6 @@ Purpose:
 Edit an existing agent process configuration.
 ========================================== -->
 
-<!-- ======================================================
- Page Header
- Provides context for editing an existing agent process
- and navigation back to the Agents list.
-====================================================== -->
 <div class="page-header d-print-none">
   <div class="row g-2 align-items-center">
     <div class="col">
@@ -35,10 +30,6 @@ Edit an existing agent process configuration.
   </div>
 </div>
 
-<!-- ======================================================
- Edit Agent Process Form
- Allows user to update agent name and associated operation.
-====================================================== -->
 <div class="row row-cards">
   <div class="col-12 col-lg-8">
     <div class="card">
@@ -47,10 +38,6 @@ Edit an existing agent process configuration.
         <!-- Form submits updated values via POST -->
         <form method="POST" class="row g-3">
 
-          <!-- ===============================
-               Agent Name Field
-               Pre-filled with current value.
-          =============================== -->
           <div class="col-12">
             <label class="form-label">Agent name</label>
             <input type="text"
@@ -60,11 +47,6 @@ Edit an existing agent process configuration.
                    required>
           </div>
 
-          <!-- ===============================
-               Operation / Template Selection
-               Jinja loop renders all TaskDefs.
-               Selected option matches current process.
-          =============================== -->
           <div class="col-12">
             <label class="form-label">Operation / template</label>
             <select class="form-select" name="operation_selected" required>
@@ -77,9 +59,6 @@ Edit an existing agent process configuration.
             </select>
           </div>
 
-          <!-- ===============================
-               Save Changes Button
-          =============================== -->
           <div class="col-12">
             <button class="btn btn-primary" type="submit">
               <i class="ti ti-device-floppy me-2"></i>Save changes

@@ -13,11 +13,6 @@ Purpose:
 Run an agent process and review stage artifacts.
 ========================================== -->
 
-<!-- ======================================================
- Page Header
- Displays selected agent process name and provides navigation
- back to the Agents list.
-====================================================== -->
 <div class="page-header d-print-none">
   <div class="row g-2 align-items-center">
     <div class="col">
@@ -35,16 +30,8 @@ Run an agent process and review stage artifacts.
   </div>
 </div>
 
-<!-- ======================================================
- Main Layout (Details + Stages + Run Form + Output)
-====================================================== -->
 <div class="row row-cards">
 
-  <!-- ======================================================
-   Process Details (Metadata)
-   Displays key metadata for the selected process including
-   model, operation, and primer text.
-  ======================================================= -->
   <div class="col-12 col-lg-5">
     <div class="card">
       <div class="card-header">
@@ -86,11 +73,6 @@ Run an agent process and review stage artifacts.
     </div>
   </div>
 
-  <!-- ======================================================
-   Workflow Stages
-   Rendered dynamically using Jinja.
-   Displays the ordered stages for the selected TaskDef.
-  ======================================================= -->
   <div class="col-12 col-lg-7">
     <div class="card">
       <div class="card-header">
@@ -125,11 +107,6 @@ Run an agent process and review stage artifacts.
     </div>
   </div>
 
-  <!-- ======================================================
-   Run Form (File Upload)
-   Allows user to upload a file and execute the agent process.
-   enctype is required for multipart file handling.
-  ======================================================= -->
   <div class="col-12">
     <div class="card">
       <div class="card-header">
