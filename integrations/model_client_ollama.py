@@ -6,7 +6,7 @@
 # Lightweight client for calling a locally hosted Ollama instance.
 #
 # Notes:
-# - Uses the /api/generate endpoint with stream=False
+# - Uses the /api/chat endpoint with stream=False
 # - Raises exceptions for HTTP/network errors so the runtime can mark stages FAILED
 #
 # #ChatGPT (OpenAI, 2025) – Assisted in structuring a minimal Ollama model
@@ -15,11 +15,10 @@
 # Conversation Topic: "Integrating Ollama into Rainn"
 # Date: January 2026
 #
-# Used by StageExecutionEngine to generate stage output within agent_runtime_service
+# Used by StageRunner to generate stage output within agent_runtime_service
 # ==========================================
 
 import requests
-
 
 class OllamaModelClient:
     """
@@ -30,10 +29,11 @@ class OllamaModelClient:
         self.host = host.rstrip("/")
         self.timeout_seconds = timeout_seconds
 
-    def generate(self, model_name, prompt, system_prompt=None):
+    def generate(self, model_name, prompt, system_prompt=None, json_mode=False):
         """
         Generate a single response from Ollama (non-streaming) with needed parameters given.
         If system_prompt is provided, it is sent as a top-level system instruction.
+        If json_mode is True, Ollama is told to force JSON output (no prose or code fences).
         """
 
         messages = []
@@ -45,7 +45,10 @@ class OllamaModelClient:
             "model": model_name,
             "messages": messages,
             "stream": False
-        } #The packet of data to send to ollama 
+        } #The packet of data to send to ollama
+
+        if json_mode:
+            payload["format"] = "json" # Forces Ollama to return clean JSON — no prose, no code fences
 
         r = requests.post(
             f"{self.host}/api/chat",
