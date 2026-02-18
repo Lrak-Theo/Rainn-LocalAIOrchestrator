@@ -52,10 +52,6 @@ class TaskInstanceService:
         """Returns all TaskInstances (newest first)."""
         return self.dao.get_all_task_instances()
 
-    def update_task_instance(self, task_instance):
-        """Updates an existing TaskInstance entry."""
-        return self.dao.update_task_instance(task_instance)
-
     def update_run_folder(self, task_instance_id, run_folder):
         """Updates the on-disk run folder path."""
         return self.dao.update_run_folder(task_instance_id, run_folder)

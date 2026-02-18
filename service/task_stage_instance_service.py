@@ -35,17 +35,9 @@ class TaskStageInstanceService:
         )
         return self.dao.create_stage_instance(new_stage)
 
-    def update_stage_instance(self, stage_instance):
-        """Updates an existing TaskStageInstance entry."""
-        return self.dao.update_stage_instance(stage_instance)
-
     def get_stages_for_task_instance(self, task_instance_id_fk):
         """Retrieves all stage executions for a TaskInstance."""
         return self.dao.get_stages_for_task_instance(task_instance_id_fk)
-
-    def list_stage_instances(self):
-        """Returns all TaskStageInstances (newest first)."""
-        return self.dao.get_all_stage_instances()
 
     def mark_stage_completed(self, stage_instance_id, output_artifact_path):
         """Marks a stage as completed."""

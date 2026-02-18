@@ -60,7 +60,7 @@ class TaskStageDefDAO:
     def get_TaskStageDefs_for_task(self, taskdef_id):
         """Returns all TaskStageDefs for a given TaskDef_ID_FK."""
         self.cursor.execute(
-            "SELECT * FROM TaskStageDef WHERE TaskDef_ID_FK = ?",
+            "SELECT * FROM TaskStageDef WHERE TaskDef_ID_FK = ? ORDER BY TaskStageDef_ID",
             (taskdef_id,)
         )
         rows = self.cursor.fetchall()
