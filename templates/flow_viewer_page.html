@@ -5,7 +5,7 @@
 {% block content %}
 
 <!-- ==========================================
-File: process_viewer.html
+File: flow_viewer_page.html
 Updated in iteration: 4
 Author: Karl Concha
 
@@ -192,7 +192,7 @@ Run an agent process and review stage artifacts.
               <i class="ti ti-download me-2"></i>Download run artifacts
             </button>
           </form>
-          <form method="post" action="{{ url_for('delete_run', task_instance_id=output_task_instance_id) }}">
+<form method="post" action="{{ url_for('delete_run', task_instance_id=output_task_instance_id) }}">
             <button type="submit" class="btn btn-outline-danger btn-sm">
               <i class="ti ti-trash me-2"></i>Delete run now
             </button>

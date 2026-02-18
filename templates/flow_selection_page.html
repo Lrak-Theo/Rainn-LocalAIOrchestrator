@@ -5,7 +5,7 @@
 {% block content %}
 
 <!-- ==========================================
-File: agent_test_list.html
+File: flow_selection_page.html
 Updated in iteration: 4
 Author: Karl Concha
 
@@ -102,10 +102,13 @@ List saved agent flows and provide primary actions.
                 <i class="ti ti-download me-1"></i>Export
               </a>
 
-              <a href="{{ url_for('update_process', process_id=p.Process_ID) }}"
+              {% set td = taskdef_map.get(p.Operation_Selected) %}
+              {% if td and td.TaskDef_Name and td.TaskDef_Name.startswith("Custom - ") %}
+              <a href="{{ url_for('agent_builder_page', edit_process_id=p.Process_ID) }}"
                  class="btn btn-outline-secondary btn-sm">
                 <i class="ti ti-edit me-1"></i>Edit
               </a>
+              {% endif %}
 
               <form method="POST"
                     action="{{ url_for('delete_process', process_id=p.Process_ID) }}"

@@ -37,11 +37,11 @@ import zipfile
 # ==========================================
 from service.task_def_service import TaskDefService
 from service.task_stage_def_service import TaskStageService
-from service.process.agent_process_service import AgentProcessService
-from service.process.agent_runtime_service import AgentRuntime
+from service.agent_process_service import AgentProcessService
+from runtime_logic.flow_runtime.flow_runtime import FlowRuntime
 from service.task_instance_service import TaskInstanceService
 from service.task_stage_instance_service import TaskStageInstanceService
-from service.flow.flow_exchange_service import FlowExchangeService
+from import_export_logic.flow_exchange_service import FlowExchangeService
 
 
 # ==========================================
@@ -52,7 +52,7 @@ app = Flask(__name__)
 taskdef_service = TaskDefService()
 stage_service = TaskStageService()
 process_service = AgentProcessService()
-agent_runtime = AgentRuntime()
+agent_runtime = FlowRuntime()
 
 # Iteration 3: instance tracking services (execution traceability)
 task_instance = TaskInstanceService()
@@ -129,25 +129,6 @@ def home_page():
 
 
 # ==========================================
-# DATABASE VIEW (Debugging) + Agent Process List
-# ==========================================
-@app.route("/DbView")
-def database_page():
-    """
-    Shows TaskDefs, TaskStages, and AgentProcesses for debugging.
-    Iteration 3: Shows TaskInstances and TaskStageInstances.
-    """
-    return render_template(
-        "database_view.html",
-        taskdefs=taskdef_service.list_taskdefs(),
-        taskstages=stage_service.list_all_stages(),
-        processes=process_service.list_processes(),
-        task_instances=task_instance.list_task_instances(),
-        task_stage_instances=task_stage_instance.list_stage_instances()
-    )
-
-
-# ==========================================
 # PROCESS LIST (Agent Test Page)
 # ==========================================
 @app.route("/test_agent")
@@ -161,7 +142,7 @@ def test_agent_page():
     import_error = request.args.get("import_error")
     imported_process_id = request.args.get("process_id")
     return render_template(
-        "agent_test_list.html",
+        "flow_selection_page.html",
         processes=process_service.list_processes(),
         taskdef_map=taskdef_map,
         import_success=import_success,
@@ -279,10 +260,30 @@ def agent_builder_page():
     edit_stages = []
     error_message = None
     step = "details"
+    edit_process_id = None
     agent_name_val = request.form.get("agent_name") if request.method == "POST" else ""
     agent_priming_val = request.form.get("agent_priming") if request.method == "POST" else ""
     ai_model_val = request.form.get("ai_model") if request.method == "POST" else ""
     from_scratch_val = request.form.get("from_scratch") == "on" if request.method == "POST" else False
+
+    raw_edit_id = request.args.get("edit_process_id") if request.method == "GET" else request.form.get("edit_process_id")
+    if raw_edit_id:
+        edit_process_id = int(raw_edit_id)
+
+    if request.method == "GET" and edit_process_id:
+        proc = process_service.get_process(edit_process_id)
+        if proc:
+            agent_name_val = proc.Agent_Name or ""
+            agent_priming_val = proc.Agent_Priming or ""
+            ai_model_val = proc.AI_Model or ""
+            current_stages = stage_service.get_stages_for_task(proc.Operation_Selected)
+            edit_stages = [
+                (s.TaskStageDef_Type, s.TaskStageDef_Description)
+                for s in current_stages
+                if (s.TaskStageDef_Type or "").strip().lower() != "input"
+            ]
+            step = "stages"
+            from_scratch_val = True
 
     def _normalize_stages(stage_names, stage_descs):
         normalized = []
@@ -303,7 +304,7 @@ def agent_builder_page():
         if action == "next":
             step = "template"
             return render_template(
-                "agent_builder.html",
+                "create_flow_page.html",
                 taskdefs=taskdefs,
                 template_taskdefs=template_taskdefs,
                 stages=stages,
@@ -315,13 +316,14 @@ def agent_builder_page():
                 from_scratch=from_scratch,
                 agent_name=agent_name_val,
                 agent_priming=agent_priming_val,
-                ai_model=ai_model_val
+                ai_model=ai_model_val,
+                edit_process_id=edit_process_id
             )
 
         if action == "back_details":
             step = "details"
             return render_template(
-                "agent_builder.html",
+                "create_flow_page.html",
                 taskdefs=taskdefs,
                 template_taskdefs=template_taskdefs,
                 stages=stages,
@@ -333,7 +335,8 @@ def agent_builder_page():
                 from_scratch=from_scratch,
                 agent_name=agent_name_val,
                 agent_priming=agent_priming_val,
-                ai_model=ai_model_val
+                ai_model=ai_model_val,
+                edit_process_id=edit_process_id
             )
 
         if action == "choose_template":
@@ -341,7 +344,7 @@ def agent_builder_page():
             if not from_scratch and not selected_taskdef:
                 error_message = "Choose a template or start from scratch."
                 return render_template(
-                    "agent_builder.html",
+                    "create_flow_page.html",
                     taskdefs=taskdefs,
                     template_taskdefs=template_taskdefs,
                     stages=stages,
@@ -354,7 +357,8 @@ def agent_builder_page():
                     agent_name=agent_name_val,
                     agent_priming=agent_priming_val,
                     ai_model=ai_model_val,
-                    error_message=error_message
+                    error_message=error_message,
+                    edit_process_id=edit_process_id
                 )
             if from_scratch:
                 edit_stages = [
@@ -368,7 +372,7 @@ def agent_builder_page():
                     if (getattr(s, "TaskStageDef_Type", "") or "").strip().lower() != "input"
                 ]
             return render_template(
-                "agent_builder.html",
+                "create_flow_page.html",
                 taskdefs=taskdefs,
                 template_taskdefs=template_taskdefs,
                 stages=stages,
@@ -381,7 +385,8 @@ def agent_builder_page():
                 from_scratch=from_scratch,
                 agent_name=agent_name_val,
                 agent_priming=agent_priming_val,
-                ai_model=ai_model_val
+                ai_model=ai_model_val,
+                edit_process_id=edit_process_id
             )
 
         if action in ("review", "back_template", "back_stages", "save"):
@@ -406,7 +411,7 @@ def agent_builder_page():
         if action == "back_template":
             step = "template"
             return render_template(
-                "agent_builder.html",
+                "create_flow_page.html",
                 taskdefs=taskdefs,
                 template_taskdefs=template_taskdefs,
                 stages=stages,
@@ -419,14 +424,15 @@ def agent_builder_page():
                 from_scratch=from_scratch,
                 agent_name=agent_name_val,
                 agent_priming=agent_priming_val,
-                ai_model=ai_model_val
+                ai_model=ai_model_val,
+                edit_process_id=edit_process_id
             )
 
         if action == "review":
             if not from_scratch and not selected_taskdef:
                 error_message = "Choose a template or start from scratch to continue."
                 return render_template(
-                    "agent_builder.html",
+                    "create_flow_page.html",
                     taskdefs=taskdefs,
                     template_taskdefs=template_taskdefs,
                     stages=stages,
@@ -440,11 +446,12 @@ def agent_builder_page():
                     agent_name=agent_name_val,
                     agent_priming=agent_priming_val,
                     ai_model=ai_model_val,
-                    error_message=error_message
+                    error_message=error_message,
+                    edit_process_id=edit_process_id
                 )
             step = "review"
             return render_template(
-                "agent_builder.html",
+                "create_flow_page.html",
                 taskdefs=taskdefs,
                 template_taskdefs=template_taskdefs,
                 stages=stages,
@@ -457,13 +464,14 @@ def agent_builder_page():
                 from_scratch=from_scratch,
                 agent_name=agent_name_val,
                 agent_priming=agent_priming_val,
-                ai_model=ai_model_val
+                ai_model=ai_model_val,
+                edit_process_id=edit_process_id
             )
 
         if action == "back_stages":
             step = "stages"
             return render_template(
-                "agent_builder.html",
+                "create_flow_page.html",
                 taskdefs=taskdefs,
                 template_taskdefs=template_taskdefs,
                 stages=stages,
@@ -476,7 +484,8 @@ def agent_builder_page():
                 from_scratch=from_scratch,
                 agent_name=agent_name_val,
                 agent_priming=agent_priming_val,
-                ai_model=ai_model_val
+                ai_model=ai_model_val,
+                edit_process_id=edit_process_id
             )
 
         agent_name = request.form.get("agent_name")
@@ -488,56 +497,58 @@ def agent_builder_page():
             request.form.getlist("stage_desc[]")
         )
 
-        taskdef_id_to_use = selected_taskdef
-        from_scratch = request.form.get("from_scratch") == "on"
-
-        if from_scratch:
-            base_name = (agent_name or "Custom Agent").strip()
-            candidate_name = f"Custom - {base_name}"
-            existing_names = {t.TaskDef_Name for t in taskdefs}
-            if candidate_name in existing_names:
-                suffix = 1
-                while f"{candidate_name} ({suffix})" in existing_names:
-                    suffix += 1
-                candidate_name = f"{candidate_name} ({suffix})"
-
-            taskdef_id_to_use = taskdef_service.create_taskdef(
-                candidate_name,
-                "Custom template created by user."
-            )
+        if edit_process_id:
+            # Edit mode: update the existing process and replace its stages in-place
+            proc = process_service.get_process(edit_process_id)
+            proc.Agent_Name = agent_name
+            proc.Agent_Priming = agent_priming
+            proc.AI_Model = ai_model
+            process_service.update_process(proc)
+            stage_service.delete_stages_for_task(proc.Operation_Selected)
             for s_name, s_desc in edited_stages:
-                stage_service.create_stage(taskdef_id_to_use, s_name, s_desc)
+                stage_service.create_stage(proc.Operation_Selected, s_name, s_desc)
+            agent_created = True
+            saved_process_id = proc.Process_ID
         else:
-            if not selected_taskdef:
-                error_message = "Select a blueprint template or choose 'Start from scratch' to save."
-                return render_template(
-                    "agent_builder.html",
-                    taskdefs=taskdefs,
-                    template_taskdefs=template_taskdefs,
-                    stages=stages,
-                    selected_taskdef=selected_taskdef,
-                    agent_saved=agent_created,
-                    saved_process_id=saved_process_id,
-                    step="stages",
-                    edit_stages=edit_stages,
-                    from_scratch=from_scratch,
-                    agent_name=agent_name_val,
-                    agent_priming=agent_priming_val,
-                    ai_model=ai_model_val,
-                    error_message=error_message
-                )
-            blueprint = []
-            if selected_taskdef:
-                blueprint_stage_objs = [
-                    s for s in stage_service.get_stages_for_task(selected_taskdef)
-                    if (getattr(s, "TaskStageDef_Type", "") or "").strip().lower() != "input"
-                ]
-                blueprint = _normalize_stages(
-                    [s.TaskStageDef_Type for s in blueprint_stage_objs],
-                    [s.TaskStageDef_Description for s in blueprint_stage_objs]
-                )
+            taskdef_id_to_use = selected_taskdef
+            from_scratch = request.form.get("from_scratch") == "on"
 
-            if edited_stages != blueprint:
+            if from_scratch:
+                base_name = (agent_name or "Custom Agent").strip()
+                candidate_name = f"Custom - {base_name}"
+                existing_names = {t.TaskDef_Name for t in taskdefs}
+                if candidate_name in existing_names:
+                    suffix = 1
+                    while f"{candidate_name} ({suffix})" in existing_names:
+                        suffix += 1
+                    candidate_name = f"{candidate_name} ({suffix})"
+
+                taskdef_id_to_use = taskdef_service.create_taskdef(
+                    candidate_name,
+                    "Custom template created by user."
+                )
+                for s_name, s_desc in edited_stages:
+                    stage_service.create_stage(taskdef_id_to_use, s_name, s_desc)
+            else:
+                if not selected_taskdef:
+                    error_message = "Select a blueprint template or choose 'Start from scratch' to save."
+                    return render_template(
+                        "create_flow_page.html",
+                        taskdefs=taskdefs,
+                        template_taskdefs=template_taskdefs,
+                        stages=stages,
+                        selected_taskdef=selected_taskdef,
+                        agent_saved=agent_created,
+                        saved_process_id=saved_process_id,
+                        step="stages",
+                        edit_stages=edit_stages,
+                        from_scratch=from_scratch,
+                        agent_name=agent_name_val,
+                        agent_priming=agent_priming_val,
+                        ai_model=ai_model_val,
+                        error_message=error_message,
+                        edit_process_id=edit_process_id
+                    )
                 base_name = (agent_name or "Custom Agent").strip()
                 candidate_name = f"Custom - {base_name}"
                 existing_names = {t.TaskDef_Name for t in taskdefs}
@@ -554,18 +565,18 @@ def agent_builder_page():
                 for s_name, s_desc in edited_stages:
                     stage_service.create_stage(taskdef_id_to_use, s_name, s_desc)
 
-        # IMPORTANT:
-        # Keep the zip version signature (required by the current service contract).
-        new_process = process_service.create_process(
-            user_id=1,
-            agent_name=agent_name,
-            agent_priming=agent_priming,
-            taskdef_id=taskdef_id_to_use,
-            ai_model=ai_model
-        )
+            # IMPORTANT:
+            # Keep the zip version signature (required by the current service contract).
+            new_process = process_service.create_process(
+                user_id=1,
+                agent_name=agent_name,
+                agent_priming=agent_priming,
+                taskdef_id=taskdef_id_to_use,
+                ai_model=ai_model
+            )
+            agent_created = True
+            saved_process_id = new_process.Process_ID
 
-        agent_created = True
-        saved_process_id = new_process.Process_ID
         step = "review"
 
     preview_stages = None
@@ -579,7 +590,7 @@ def agent_builder_page():
         ]
 
     return render_template(
-        "agent_builder.html",
+        "create_flow_page.html",
         taskdefs=taskdefs,
         template_taskdefs=template_taskdefs,
         stages=stages,
@@ -593,7 +604,8 @@ def agent_builder_page():
         agent_name=agent_name_val if agent_created else agent_name_val,
         agent_priming=agent_priming_val if agent_created else agent_priming_val,
         ai_model=ai_model_val if agent_created else ai_model_val,
-        error_message=error_message
+        error_message=error_message,
+        edit_process_id=edit_process_id
     )
 
 
@@ -654,7 +666,7 @@ def agent_runner_page(process_id):
                 if not temp_files:
                     file_text = "No file uploaded"
                 else:
-                    result = agent_runtime.run_task(
+                    result = agent_runtime.run_flow(
                         process_id=process_id,
                         taskdef_id=taskdef.TaskDef_ID,
                         file_path=temp_files
@@ -727,7 +739,7 @@ def agent_runner_page(process_id):
                         pass
 
     return render_template(
-        "process_viewer.html",
+        "flow_viewer_page.html",
         process=process,
         taskdef=taskdef,
         stages=stages,
@@ -744,34 +756,6 @@ def agent_runner_page(process_id):
         receipt_retention_hours=RECEIPT_RETENTION_HOURS
     )
 
-
-# ==========================================
-# UPDATE AGENT PROCESS
-# ==========================================
-@app.route("/update_process/<int:process_id>", methods=["GET", "POST"])
-def update_process(process_id):
-    """
-    Updates an existing AgentProcess.
-    Keeps zip-style update_process(process) behaviour (object mutation).
-    """
-    process = process_service.get_process(process_id)
-    if not process:
-        return "Agent Process not found.", 404
-
-    all_taskdefs = taskdef_service.list_taskdefs()
-
-    if request.method == "POST":
-        process.Agent_Name = request.form.get("agent_name")
-        process.Operation_Selected = int(request.form.get("operation_selected"))
-
-        process_service.update_process(process)
-        return redirect(url_for("test_agent_page"))
-
-    return render_template(
-        "process_update.html",
-        process=process,
-        taskdefs=all_taskdefs
-    )
 
 
 # ==========================================
@@ -795,25 +779,14 @@ def download_run(task_instance_id):
     if not task_inst or not task_instance.is_active(task_inst):
         if task_inst and not task_inst.Deleted_At:
             _cleanup_task_instance(task_instance_id)
-            task_inst = task_instance.get_task_instance(task_instance_id)
-        return render_template(
-            "run_receipt.html",
-            receipt=task_inst,
-            message="This run was automatically deleted for privacy after inactivity.",
-            receipt_retention_hours=RECEIPT_RETENTION_HOURS
-        ), 410
+        return redirect(url_for("test_agent_page"))
 
     task_instance.mark_downloaded(task_instance_id, RUN_TTL_SECONDS)
     task_inst = task_instance.get_task_instance(task_instance_id)
 
     run_folder = _safe_run_folder(task_instance_id)
     if not os.path.isdir(run_folder):
-        return render_template(
-            "run_receipt.html",
-            receipt=task_inst,
-            message="This run was automatically deleted for privacy after inactivity.",
-            receipt_retention_hours=RECEIPT_RETENTION_HOURS
-        ), 410
+        return redirect(url_for("test_agent_page"))
 
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as zf:
@@ -831,7 +804,6 @@ def download_run(task_instance_id):
             "expires_at": task_inst.Expires_At,
             "downloaded_at": task_inst.Downloaded_At
         }
-        import json
         zf.writestr("run_metadata.json", json.dumps(metadata, indent=2))
 
     buffer.seek(0)
@@ -852,13 +824,7 @@ def delete_run(task_instance_id):
     task_inst = task_instance.get_task_instance(task_instance_id)
     if task_inst and not task_inst.Deleted_At:
         _cleanup_task_instance(task_instance_id)
-        task_inst = task_instance.get_task_instance(task_instance_id)
-    return render_template(
-        "run_receipt.html",
-        receipt=task_inst,
-        message="This run was manually deleted for privacy.",
-        receipt_retention_hours=RECEIPT_RETENTION_HOURS
-    )
+    return redirect(url_for("test_agent_page"))
 
 
 # ==========================================
@@ -873,13 +839,7 @@ def artifact_file(task_instance_id, filename):
     if not task_inst or not task_instance.is_active(task_inst):
         if task_inst and not task_inst.Deleted_At:
             _cleanup_task_instance(task_instance_id)
-            task_inst = task_instance.get_task_instance(task_instance_id)
-        return render_template(
-            "run_receipt.html",
-            receipt=task_inst,
-            message="This run was automatically deleted for privacy after inactivity.",
-            receipt_retention_hours=RECEIPT_RETENTION_HOURS
-        ), 410
+        return "Run has expired or been deleted.", 410
 
     task_instance.touch_task_instance(task_instance_id, RUN_TTL_SECONDS)
 
