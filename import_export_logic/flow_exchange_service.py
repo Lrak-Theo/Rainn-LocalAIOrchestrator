@@ -9,7 +9,7 @@
 
 from datetime import datetime
 
-from service.process.agent_process_service import AgentProcessService
+from service.agent_process_service import AgentProcessService
 from service.task_def_service import TaskDefService
 from service.task_stage_def_service import TaskStageService
 
