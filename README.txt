@@ -3,6 +3,9 @@ Rainn
 
 Rainn is a guided workflow builder for creating, running, and managing document-processing agent plans. It lets a user define reusable multi-stage plans, upload files, run those plans through a local Ollama model, and view structured outputs such as summaries, CSV-style results, and generated charts.
 
+![Flask UI - Home](Home.png)
+![Plan screen](Plan select.png)
+
 What It Does
 ------------
 
@@ -18,7 +21,7 @@ What It Does
 Problem It Solves
 -----------------
 
-Many document-heavy tasks require the same repeated process: read files, extract important information, compare or evaluate it, format the result, and produce a final output. Rainn turns those repeated processes into reusable plans, so users can run structured workflows without manually prompting a model step by step each time.
+Many document-heavy tasks require the same repeated process: read files, extract important information, compare or evaluate it, format the result, and produce a final output. Rainn turns those repeated processes into reusable plans, so users can run structured workflows without manually prompting a model step by step each time, locally and privately.
 
 The project is aimed at making local document automation easier for tasks such as:
 
@@ -27,6 +30,9 @@ The project is aimed at making local document automation easier for tasks such a
 - Deadline and workload tracking
 - Procurement quote comparison
 - Structured report generation
+
+[!Flask Plan list](Plan list.png)
+{!Flask run history)(Plan history.png)
 
 Tech Stack
 ----------
