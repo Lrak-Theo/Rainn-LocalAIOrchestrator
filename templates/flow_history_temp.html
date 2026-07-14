@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="page-header d-print-none">
+  <div class="row g-2 align-items-center">
+    <div class="col">
+      <h2 class="page-title">Run History</h2>
+      <div class="text-secondary mt-1">Session runs are listed below. All data is cleared on server restart.</div>
+    </div>
+  </div>
+</div>
+
+<div class="card mt-3">
+
+  <div class="table-responsive">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th>Run ID</th>
+          <th>Status</th>
+          <th>Started</th>
+          <th>Last Modified</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+
+        {% if runs %}
+          {% for run in runs %}
+          <tr>
+            <td><a href="{{ url_for('past_flow_result_page', run_id=run.TaskInstance_ID) }}">#{{ run.TaskInstance_ID }}</a></td>
+
+            <!-- Status badge — colour-coded by run state -->
+            <td>
+              {% if run.Status == "COMPLETED" %}
+                <span class="badge bg-success-lt">Completed</span>
+              {% elif run.Status == "RUNNING" %}
+                <span class="badge bg-warning-lt">Running</span>
+              {% elif run.Status == "FAILED" %}
+                <span class="badge bg-danger-lt">Failed</span>
+              {% else %}
+                <span class="badge bg-secondary-lt">{{ run.Status }}</span>
+              {% endif %}
+            </td>
+
+            <td class="text-secondary small">{{ run.Created_At or "—" }}</td>
+
+            <td class="text-secondary small">{{ run.Updated_At or "—" }}</td>
+
+            <!-- Delete run button -->
+            <td class="text-end">
+              <form method="POST" action="/delete_run/{{ run.TaskInstance_ID }}" style="display:inline;">
+                <button type="submit" class="btn btn-sm btn-danger"
+                        onclick="return confirm('Delete run #{{ run.TaskInstance_ID }}?')">
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+
+        {% else %}
+          <!-- Empty state -->
+          <tr>
+            <td colspan="6" class="text-center text-secondary py-4">
+              No runs in this session yet.
+            </td>
+          </tr>
+        {% endif %}
+
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+{% endblock %}

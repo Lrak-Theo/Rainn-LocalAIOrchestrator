@@ -1,8 +1,0 @@
-Owner: Ava
-Task: Task 8
-StartDate: 2026-01-25
-DueDate: 2026-02-11
-EffortHours: 39
-Priority: Medium
-Status: Not Started
-Project: Atlas

@@ -1,7 +1,0 @@
-Abstract: This paper (2020) investigates anomaly detection in fintech transactions in the context of FinTech. We propose a workflow combining fraud signals, precision/recall, concept drift. Method: Transformer-based classifier with ablations. Dataset: Synthetic transaction stream (n=1,000,000) with injected anomalies. Metrics: Accuracy, Macro-F1, calibration error.
-
-Methods & Data: Transformer-based classifier with ablations. Synthetic transaction stream (n=1,000,000) with injected anomalies.
-
-Results: Benefits are concentrated in small SMEs; larger orgs show marginal gains.
-
-Limitations: Model performance degrades under concept drift over 6 months.

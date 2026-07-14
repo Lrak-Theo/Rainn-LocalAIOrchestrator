@@ -1,7 +1,0 @@
-Owner,Task,StartDate,DueDate,EffortHours,Priority,Status,Project
-Mia,Task 6,2026-01-28,2026-02-01,36,Low,Blocked,Nimbus
-Sofia,Task 5,2026-01-31,2026-02-02,3,Low,In Progress,Atlas
-Liam,Task 10,2026-01-24,2026-02-08,32,High,Not Started,Summit
-Noah,Task 30,2026-01-25,2026-02-23,12,High,Done,Atlas
-Kai,Task 11,2026-01-25,2026-02-06,39,Low,Blocked,Summit
-Sofia,Task 25,2026-01-27,2026-03-17,14,Low,Done,Nimbus

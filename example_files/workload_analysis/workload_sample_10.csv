@@ -1,7 +1,0 @@
-Owner,Task,StartDate,DueDate,EffortHours,Priority,Status,Project
-Sofia,Task 39,2026-01-28,2026-02-18,4,Low,Blocked,Orion
-Sofia,Task 30,2026-01-22,2026-03-15,16,Medium,Done,Nimbus
-Ethan,Task 8,2026-01-29,2026-02-14,11,Medium,In Progress,Atlas
-Ava,Task 11,2026-01-25,2026-03-10,38,Medium,Review,Atlas
-Ethan,Task 45,2026-01-25,2026-03-16,27,Medium,Done,Summit
-Ethan,Task 29,2026-01-22,2026-03-10,4,Medium,Blocked,Summit

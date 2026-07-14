@@ -1,0 +1,454 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex flex-column" style="height: calc(100vh - 120px); max-width: 740px; margin: 0 auto;">
+  <div id="chatContainer" class="flex-fill overflow-auto d-flex flex-column gap-2 py-3"></div>
+
+  <div id="flowPanel" class="card mb-2 border-0" style="display: none; background-color: rgba(111, 66, 193, 0.10); border: 1px solid rgba(111, 66, 193, 0.24); border-radius: 14px;"> <!-- id: [ flowPanel ] is used ...-->
+    <div class="card-header bg-transparent border-0 py-2 d-flex justify-content-between align-items-start">
+      <h3 class="card-title m-0 small" style="color: rgba(90, 41, 153, 0.95);">Planning...</h3>
+      <button id="closePanelButton" type="button" class="btn-close btn-close-sm"></button> <!-- id: [ closePanelButton ] is used ...-->
+    </div>
+    <div class="card-body pt-1">
+      <select id="flowSelect" class="form-select form-select-sm mb-2"> <!-- id: [ flowSelect ] is used ... -->
+        <option value="">Select a plan</option> <!-- option & id: [ value ] is passed down to the JS script -->
+      </select>
+
+      <div id="flowStagePreview" class="small text-secondary mb-2" style="display:none;"></div>
+
+      <input id="chatFileInput" type="file" multiple class="form-control form-control-sm mb-2"> <!-- id: [ chatFileInput ] is used ...-->
+
+      <button id="runFlowButton" class="btn btn-primary btn-sm w-100"> <!-- id: [ runFlowButton ] is used ...-->
+          <i class="ti ti-player-play me-1"></i>Run Plan
+      </button>
+    </div>
+  </div>
+
+  <!-- Progress bar (hidden by default, appears when flow starts) -->
+  <div id="chatProgressBar" class="mb-2" style="display:none;">
+    <span id="chatStatusText" class="text-secondary small d-flex align-items-center gap-2 mb-1">Ready</span>
+    <div style="height: 6px; background: var(--tblr-bg-surface); border-radius: 3px; overflow:hidden;">
+      <div id="chatProgressFill" style="height:100%; width:0%; background:var(--tblr-primary); transition:width 0.4s ease;"></div>
+    </div>
+  </div>
+
+
+  <div class="pb-2">
+
+  
+
+
+    <div class="d-flex align-items-center gap-2 border rounded-pill bg-white px-2 py-1 shadow-sm">
+
+      <button id="planButton" type="button" class="btn btn-ghost-primary d-inline-flex align-items-center gap-1 rounded-pill px-2 py-1">
+        <i class="ti ti-clipboard-list"></i>
+        <span class="small fw-medium">Plan Mode</span>
+      </button>
+
+      <input id="chatInput" type="text" class="form-control border-0 bg-transparent shadow-none" placeholder="Message Rainn...">
+
+      <button id="sendButton" type="button" class="btn btn-primary btn-icon rounded-circle d-inline-flex align-items-center justify-content-center">
+        <i class="ti ti-send-2"></i>
+      </button>
+
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.socket.io/4.5.3/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+
+<script>
+window.onload = function () {
+ 
+  // The shared variables for this script block (which are available to all functions inside the window.onload)
+  // Sorted by which element id appear first in the HTML
+  const planButton = document.getElementById("planButton");
+  const flowPanel = document.getElementById("flowPanel");
+  const closePanelButton = document.getElementById("closePanelButton");
+  const flowSelect = document.getElementById("flowSelect");
+  const flowStagePreview = document.getElementById("flowStagePreview");
+  const runFlowButton = document.getElementById("runFlowButton");
+  const chatFileInput = document.getElementById("chatFileInput");
+  const chatProgressBar = document.getElementById("chatProgressBar");
+  const chatProgressFill = document.getElementById("chatProgressFill");
+  const chatStatusText = document.getElementById("chatStatusText");  
+
+  const chatContainer = document.getElementById("chatContainer"); // [ chatContainer ] is an id element from HTML above
+  const chatInput = document.getElementById("chatInput"); // [ chatInput ] is an id element from HTML above
+  const sendButton = document.getElementById("sendButton"); // [ sendButton ] is an id element from HTML above
+
+  const Max_Context = 20;
+
+  let conversationContext = [];
+  let flowStageContext = [];
+  let latestFlowContext = "";
+  let lastRunID = null; // to enable download links for the output flow
+  // END  
+
+
+  function renderMarkdownSafe(text) {
+    const html = marked.parse(text || "", {gfm: true, breaks: true});
+    
+    return DOMPurify.sanitize(html);
+  }
+
+  function renderCSV(csvText, mountElement) {
+    const {data} = Papa.parse(csvText || "", { skipEmptylines: true })
+
+    if (!data || !data.length) {
+      mountElement.textContent = "No CSV rows found";
+      return;
+    }
+
+    const headers = data[0];
+    const rows = data.slice(1);
+
+    let html = '<div class="table-responsive"><table class="table table-sm table-vcenter">';
+    html += "<thead><tr>" + headers.map(h => `<th>${String(h ?? "")}</th>`).join("") + "</tr></thead>";
+    html += "<tbody>" + rows.map(r => "<tr>" + r.map(c => `<td>${String(c ?? "")}</td>`).join("") + "</tr>").join("") + "</tbody>";
+    html += "</table></div>";
+
+    mountElement.innerHTML = html;
+  }
+
+  function apiMessage(payload, status) {
+    if (payload && payload.message) return payload.message;
+    return `Request failed (${status})`;
+  }
+
+  function addtoContext(role, content) {
+    conversationContext.push({ role, content });
+
+    if (conversationContext.length > Max_Context)  {
+      conversationContext = conversationContext.slice(-Max_Context);
+    }
+  }
+
+  function renderFlowStagePreview(stages) {
+    const stageList = Array.isArray(stages) ? stages : [];
+    
+    const lines = stageList.map((s, i) => '<li><strong>Stage ' + (i + 1) + ':</strong> ' + escapeHTML(s.type || "Stage") + ' - ' + escapeHTML(s.desc || "") + '</li>');
+    flowStagePreview.innerHTML = '<div class="fw-semibold mb-1">Plan stages</div><ol class="mb-0 ps-3">' + lines.join("") + "</ol>";
+    flowStagePreview.style.display = "";
+  }
+
+  function escapeHTML(userText) { // This function is to show usual HTML characters to be shown literally as text rather than code
+    const div = document.createElement("div");
+
+    div.textContent = userText; // 'textContent is the function for the conversion'
+    return div.innerHTML;
+  }
+  // why add escapeHTML to begin with?: Its to ensure text that is being inserted into innerHTML is treated like text not HTML code
+
+
+
+  function addUserChatBubble(userText) { // function to create the chat bubble with the user message inside, which is then now made visible as a past message
+    const row = document.createElement("div");
+    
+    row.className = "d-flex justify-content-end";
+    row.innerHTML = '<div class="text-dark rounded-3 px-3 py-2" style="background-color: #E8EEF2; max-width: 70%; white-space: pre-wrap;">' + 
+      escapeHTML(userText) + "</div>"  // Creating the div element of the user message to show in the screen 
+
+    chatContainer.appendChild(row);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+
+  function addAiChat(AIText) { // function to create the AI response message into the chat
+    const row = document.createElement("div");
+    row.className = "d-flex w-100";
+    const content = document.createElement("div");
+
+    content.className = "text-body ai-generated-text";
+    content.style.whiteSpace = "pre-wrap";
+    content.textContent = "";
+
+    row.appendChild(content);
+    chatContainer.appendChild(row);
+
+    let i = 0; // as a UX improvemet, the text gradually appears to reduce cognitive overload on the amount of text a response could give
+    const timer = setInterval(() => {
+      i += 2;
+
+      content.innerHTML = renderMarkdownSafe(AIText.slice(0, i++)); // The function to show the response gradually
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      if (i > AIText.length) {
+        clearInterval(timer);  // When all characters in the response is shown, stop the timer to 0 
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+    }, 12);
+  }
+
+  function addAiThinkingIndicator() {
+    const row = document.createElement("div");
+    row.className = "d-flex w-100";
+    row.innerHTML = '<div class="spinner-grow spinner-grow-sm text-purple" role="status"></div>';
+    chatContainer.appendChild(row);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    return row;
+  }
+
+  function removeAiThinkingIndicator(indicatorRow) {
+    if (indicatorRow && indicatorRow.parentNode) indicatorRow.parentNode.removeChild(indicatorRow);
+  }
+
+  function sendChatMessage(userText) {
+    const thinkingIndicator = addAiThinkingIndicator();
+    
+    fetch("/chat/send", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ message: userText, context: conversationContext, flow_context: latestFlowContext }) })
+    // fetch sends an HTTP request from the browser to a URL, sending the user text to the Flask backend
+
+    .then(async (r) => {
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok || data.ok === false) {
+        throw new Error(apiMessage(data, r.status));
+      }
+      return data;
+    })
+
+    .then((data) => { 
+      removeAiThinkingIndicator(thinkingIndicator);
+
+      addtoContext("user", userText) // Add the user message to context window
+
+      const aiText = data.response || ""; // ['data'] is the parsed JSON object from Flask (the return jsonify({"response": response_message}))
+
+      addAiChat(aiText); 
+      addtoContext("assistant", aiText);
+
+    })
+
+    .catch(err => {
+      removeAiThinkingIndicator(thinkingIndicator);
+      addAiChat("Failed to generate response: " + err.message);
+    })
+
+  }
+
+  function handleSend() { // This function runs after the user enters or presses send button
+    const text = chatInput.value.trim();
+
+    if (!text) return; // If the user did not send any message or is empty, the function will not go through (returning empty / exit early)
+
+    chatInput.value = ""; // Clearing the text that was in the input field
+
+    addUserChatBubble(text); // The text that was cleared is now inside the chat bubble
+    sendChatMessage(text);
+
+  }
+
+  sendButton.addEventListener("click", handleSend); // The perceived action of the user when clicking the button, which will then call the handleSend function (the bridege)
+  
+  chatInput.addEventListener("keydown", function (e) { // An alterntaive to calling the handSend function is when the user presses the 'Enter' key instead.
+    if (e.key === "Enter" && !e.shiftKey) { // if e is the same value and type as "Enter" string and is not being held
+
+      e.preventDefault();
+      handleSend();
+
+      // what is 'e'?: In this case it is the event object that is retreived from the "keydown" event type. 
+    }
+  })
+
+  function finalDownloadLink(filename) { // This function will render the download link when the plan completes
+    if (!lastRunID || !filename) return;
+
+  const row = document.createElement("div");
+  row.className = "d-flex w-100";
+  row.innerHTML =
+    '<div class="mt-2">' +
+      '<a class="btn btn-outline-secondary btn-sm" href="/download/' +
+      encodeURIComponent(String(lastRunID)) + '/' +
+      encodeURIComponent(filename) + // Generating the link
+      '" download>' +
+      '<i class="ti ti-download me-1"></i>Download output' +
+      '</a>' +
+    '</div>';
+
+    chatContainer.appendChild(row);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+
+
+
+  // Flow selection script (all below, seperated for clarity)
+  planButton.addEventListener("click", function() {
+    const isHidden = flowPanel.style.display === "none";
+    flowPanel.style.display = isHidden ? "": "none";
+
+    if (isHidden && flowSelect.options.length <= 1) {
+
+      fetch("/chat/flows")
+        .then(async (r) => {
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok || data.ok === false) {
+            throw new Error(apiMessage(data, r.status));
+          }
+          return data;
+        })
+
+        .then((data) => {
+          data.flows.forEach(flow => { 
+            const option = document.createElement("option");
+
+            option.value = flow.process_id;
+            option.textContent = flow.agent_name + " (" + flow.ai_model + ")";
+
+            option.dataset.stages = JSON.stringify(flow.stages || []);
+            flowSelect.appendChild(option);
+
+          });
+        })
+
+        .catch((err) => {
+          addAiChat("Failed to load plans: " + err.message);
+        });
+    }
+  });
+
+  flowSelect.addEventListener("change", function() { // the function to render the stages in preivew mode in the flowSelect panel
+    const selectedOption = flowSelect.options[flowSelect.selectedIndex];
+
+    let stages = [];
+
+
+    try {
+      stages = JSON.parse(selectedOption.dataset.stages || "[]"); // Converting the stage text (from dataset.stages) to an array, else be empty []
+    } catch (error) {                                             // Why? because dataset.stages text is 
+      stages = [];
+    }
+    renderFlowStagePreview(stages);
+  });
+
+  closePanelButton.addEventListener("click", function() {
+    flowPanel.style.display = "none";
+    renderFlowStagePreview([]);
+  });
+
+
+  // Script for run flow button
+  runFlowButton.addEventListener("click", function () {
+    const processId  = flowSelect.value;
+
+    if (!processId) { addAiChat("Please select a plan first."); return;}
+    if (!chatFileInput.files.length) { addAiChat("Please upload file(s) to run the plan."); return;}
+    flowStageContext = [];
+    latestFlowContext = "";
+
+    const formData = new FormData();
+    formData.append("process_id", processId);
+    for (const file of chatFileInput.files) {
+      formData.append("uploaded_file", file);
+    }
+
+
+    // within the run flow script resides the progress bar function
+    chatProgressBar.style.display = "";
+    chatProgressFill.style.width = "0%";
+    chatStatusText.innerHTML = '<div class="spinner-border spinner-border-sm text-primary me-2"></div> Starting...';
+
+    // Closing the panel and then running the flow through calling the POST
+    flowPanel.style.display = "none";
+
+    fetch("/chat/run_flow", {method: "POST", body: formData }) // Fetching the flask route to run and wait for json resposne packet
+
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({})); // Parsing the raw HTTP response object to JSON 
+
+        if (!r.ok || data.ok === false) {
+          throw new Error(apiMessage(data, r.status)); // If error occurs from backend pass down to .catch because of 'throw'
+        }
+
+        return data;
+      })
+
+      .then((data) => {
+        addAiChat(data.message || "Plan started.");
+      })
+
+      .catch((err) => { // Error handler for network issues, parse issues, HTTP errors, and backend validation errors.
+        addAiChat("Failed to start plan: " + err.message);
+        chatProgressBar.style.display = "none";
+      });
+
+
+   });
+
+
+   // ProgressBar SocketIO script
+  const socket = io();
+
+  socket.on("update progress", function (progress_update) { // Connected to progress update emit in run stage.py
+  chatProgressFill.style.width = progress_update.percent + "%";
+  const stageNameRaw = (progress_update.stage_name || "").replace(/_/g, " ");
+  
+  const stageName = stageNameRaw ? stageNameRaw.charAt(0).toUpperCase() + stageNameRaw.slice(1) : "Stage";
+  chatStatusText.innerHTML = '<div class="spinner-border spinner-border-sm text-primary me-2"></div> Processing stage ' + progress_update.stage_number + ': ' + stageName + '...';
+
+  if (progress_update.stage_context) {
+    flowStageContext.push(progress_update.stage_context);
+  }
+
+  if (progress_update.run_id) {
+    lastRunID = progress_update.run_id
+  }
+
+  });
+  
+  socket.on("run complete", function (data) {
+    chatProgressFill.style.width = "100%";
+    chatStatusText.innerHTML = '<i class="ti ti-circle-check text-success me-2"></i> Complete';
+
+    if (flowStageContext.length) {
+      const contextText = flowStageContext.map(s => "Stage " + s.stage_number + " (" + s.stage_type + "):\n" + s.content).join("\n\n---\n\n");
+      latestFlowContext = contextText;
+      flowStageContext = []; // After adding the flow stage context to the context window, empty again for the next stage
+    }
+
+    if (data.output_type === "svg") {
+      const row = document.createElement("div");
+
+      row.className = "d-flex w-100";
+      row.innerHTML = data.output_text;
+      
+      chatContainer. appendChild(row); 
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+
+    } else if (data.output_type === "csv") {
+      const row = document.createElement("div");
+      row.className = "d-flex w-100";
+
+      renderCSV(data.output_text, row); 
+
+      chatContainer.appendChild(row);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    
+    }  else {
+      addAiChat(data.output_text);
+    }
+
+    chatProgressBar.style.display = "none";
+
+    if (data.output_filename) {
+      const finalFilename =  data.output_filename;
+      finalDownloadLink(finalFilename); 
+    }
+
+    });
+
+}
+
+
+</script>
+
+
+{% endblock %}

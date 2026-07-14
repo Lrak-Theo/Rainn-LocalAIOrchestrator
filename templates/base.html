@@ -1,21 +1,3 @@
-<!-- ==========================================
-File: base.html
-Updated in iteration: 4
-Author: Karl Concha
-
-#ChatGPT (OpenAI, 2026) – Assisted in refactoring the base layout to Tabler
-and aligning navigation with the Rainn sitemap (Home, Agent Flows, Builder).
-Conversation Topic: "Iteration 3 – Tabler base layout + sidebar navigation".
-Date: January 2026
-
-Notes:
-- Uses Tabler (Bootstrap 5-based) for a clean, modern dashboard UI.
-- Sidebar is kept across most pages to keep the system visually contained.
-- Child templates render within the Jinja content block.
-Iteration 4 Notes:
-- Renamed navigation labels for agent flows.
-- Removed duplicate Run Agent nav entry.
-========================================== -->
 <!doctype html>
 <html lang="en">
 
@@ -24,11 +6,18 @@ Iteration 4 Notes:
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Rainn</title>
 
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta21/dist/css/tabler.min.css"> <!-- Tabler import -->
+  <!-- Tabler CSS framework (Bootstrap 5-based dashboard UI) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta21/dist/css/tabler.min.css">
 
+  <!-- Tabler icon font (provides ti-* icon classes used throughout templates) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap">
 
+  <!-- Project-specific overrides -->
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
 </head>
 
 <body>
@@ -45,7 +34,6 @@ Iteration 4 Notes:
                  alt="Rainn"
                  class="navbar-brand-image"
                  style="height: 28px; width: auto;">
-            <span class="fw-semibold">Rainn</span>
           </a>
         </h1>
 
@@ -68,29 +56,52 @@ Iteration 4 Notes:
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('home_page') }}">
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <i class="ti ti-home"></i>
+                  <i class="ti ti-plus"></i>
                 </span>
-                <span class="nav-link-title">Home</span>
+                <span class="nav-link-title">Chat</span>
               </a>
             </li>
 
             <!-- Agent Flows -->
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('test_agent_page') }}">
+              <a class="nav-link" href="{{ url_for('flow_selection_page') }}">
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <i class="ti ti-box"></i>
+                  <i class="ti ti-list-check"></i>
                 </span>
-                <span class="nav-link-title">Agent Flows</span>
+                <span class="nav-link-title">Agent Plans</span>
               </a>
             </li>
 
             <!-- Create Agent Flows -->
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('agent_builder_page') }}">
+              <a class="nav-link" href="{{ url_for('flow_builder_page') }}">
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <i class="ti ti-wand"></i>
+                  <i class="ti ti-robot"></i>
                 </span>
-                <span class="nav-link-title">Create Agent Flow</span>
+                <span class="nav-link-title">Create a Plan</span>
+              </a>
+            </li>
+
+            <!-- Import Plan -->
+            <li class="nav-item">
+              <a class="nav-link" href="#" id="importPlanTrigger">
+                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                  <i class="ti ti-arrow-up"></i>
+                </span>
+                <span class="nav-link-title">Import Plan</span>
+              </a>
+              <form id="importPlanForm" method="POST" action="{{ url_for('flow_import') }}" enctype="multipart/form-data" style="display:none;">
+                <input id="importPlanFileInput" type="file" name="flow_file" accept=".json,application/json">
+              </form>
+            </li>
+
+            <!-- Run History -->
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('flow_history_page') }}">
+                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                  <i class="ti ti-history"></i>
+                </span>
+                <span class="nav-link-title">View Past Plans</span>
               </a>
             </li>
 
@@ -102,32 +113,47 @@ Iteration 4 Notes:
 
     <div class="page-wrapper">
       <div class="page-body">
-        <div class="container-xl">
+        <div class="container-xl {% block content_container_class %}{% endblock %}">
           {% block content %}{% endblock %}
         </div>
       </div>
 
       <footer class="footer footer-transparent d-print-none">
-        <div class="container-xl">
-          <div class="row text-center align-items-center">
-            <div class="col-12 col-lg-auto">
-              <ul class="list-inline list-inline-dots mb-0">
-                <li class="list-inline-item">
-                  Rainn - Guided AI Agent Builder
-                </li>
-                <li class="list-inline-item">
-                  <span class="text-secondary">Iteration 3</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
       </footer>
     </div>
 
   </div>
 
+  <!-- Tabler JS (handles sidebar toggle, dropdowns, and other interactive components) -->
   <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta21/dist/js/tabler.min.js"></script>
 
+  <script>
+
+    // Script to enable the user to import a flow
+    document.addEventListener("DOMContentLoaded", function () {
+      const trigger = document.getElementById("importPlanTrigger");
+      const fileInput = document.getElementById("importPlanFileInput");
+      const form = document.getElementById("importPlanForm");
+
+      if (!trigger || !fileInput || !form) return;
+
+      trigger.addEventListener("click", function (event) {
+        event.preventDefault();
+        fileInput.click();
+      });
+
+      fileInput.addEventListener("change", function () {
+        if (fileInput.files && fileInput.files.length > 0) {
+          form.submit();
+        }
+      });
+    });
+
+  </script>
+
+  {% block scripts %}
+
+  {% endblock %}
 </body>
+
 </html>

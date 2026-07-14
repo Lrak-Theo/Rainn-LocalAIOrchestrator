@@ -1,7 +1,0 @@
-Owner,Task,StartDate,DueDate,EffortHours,Priority,Status,Project
-Noah,Task 8,2026-01-24,2026-02-20,9,High,Done,Nimbus
-Noah,Task 14,2026-01-28,2026-02-17,39,High,Done,Orion
-Ava,Task 13,2026-01-25,2026-02-14,25,Low,Blocked,Atlas
-Sofia,Task 35,2026-01-23,2026-02-17,4,Low,Done,Orion
-Sofia,Task 9,2026-01-31,2026-03-03,8,Low,Done,Orion
-Ethan,Task 31,2026-01-28,2026-02-21,13,Low,Blocked,Harbor

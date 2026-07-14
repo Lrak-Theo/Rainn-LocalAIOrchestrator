@@ -1,4 +1,6 @@
-# Updated in iteration: 4
 Flask>=3.0.0
+Flask-SocketIO
 requests
 matplotlib
+python-docx
+PyPDF2

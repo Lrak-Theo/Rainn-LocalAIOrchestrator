@@ -1,237 +1,68 @@
 {% extends "base.html" %}
 
-{% block title %}Rainn | Run Agent{% endblock %}
 
 {% block content %}
 
-<!-- ==========================================
-File: flow_viewer_page.html
-Updated in iteration: 4
-Author: Karl Concha
-
-Purpose:
-Run an agent process and review stage artifacts.
-========================================== -->
-
-<div class="page-header d-print-none">
-  <div class="row g-2 align-items-center">
-    <div class="col">
-      <div class="page-pretitle">Run Agent</div>
-      <h2 class="page-title">{{ process.Agent_Name }}</h2>
-      <div class="text-secondary">Upload a file, then execute the multi-stage workflow (Stage 1..N).</div>
-    </div>
-
-    <!-- Back to Agents -->
-    <div class="col-auto ms-auto d-print-none">
-      <a href="{{ url_for('test_agent_page') }}" class="btn btn-outline-secondary">
-        <i class="ti ti-arrow-left me-2"></i>Back to Agents
-      </a>
-    </div>
+<div class="page-header d-print-none mb-2">
+  <h4 class="page-title mb-0">{{ process.Agent_Name }}</h4>
+  <div class="text-secondary small d-flex gap-3">
+    <span><i class="ti ti-cpu me-1"></i>Model in use: {{ process.AI_Model }}</span>
+    <a href="{{ url_for('export_flow', process_id=process.Process_ID) }}" class="text-secondary">
+      <i class="ti ti-download me-1"></i>Export
+    </a>
   </div>
 </div>
+
 
 <div class="row row-cards">
 
-  <div class="col-12 col-lg-5">
-    <div class="card">
-      <div class="card-header">
-        <div class="d-flex align-items-center justify-content-between w-100">
-          <h3 class="card-title">Process Details</h3>
-          <a class="btn btn-outline-secondary btn-sm"
-             href="{{ url_for('export_flow', process_id=process.Process_ID) }}">
-            <i class="ti ti-download me-2"></i>Export Flow
-          </a>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="mb-2">
-          <span class="text-secondary">Process ID:</span>
-          <span class="fw-semibold">{{ process.Process_ID }}</span>
-        </div>
-
-        <div class="mb-2">
-          <span class="text-secondary">Model:</span>
-          <span class="fw-semibold">{{ process.AI_Model }}</span>
-        </div>
-
-        <div class="mb-2">
-          <span class="text-secondary">Operation:</span>
-          <span class="fw-semibold">{{ taskdef.TaskDef_Name }}</span>
-        </div>
-
-        <div class="mb-2">
-          <span class="text-secondary">Created:</span>
-          <span class="fw-semibold">{{ process.Created_At }}</span>
-        </div>
-
-        <!-- Agent Primer -->
-        <div class="mt-3">
-          <div class="text-secondary mb-1">Primer</div>
-          <div class="p-2 border rounded bg-light">{{ process.Agent_Priming }}</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-12 col-lg-7">
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Workflow Stages</h3>
-      </div>
-
-      <div class="table-responsive">
-        <table class="table card-table table-vcenter">
-
-          <!-- Table Headings -->
-          <thead>
-            <tr>
-              <th class="w-1">#</th>
-              <th>Stage</th>
-              <th class="text-secondary">Description</th>
-            </tr>
-          </thead>
-
-          <!-- Stage Rows -->
-          <tbody>
-            {% for stage in stages %}
-            <tr>
-              <td class="text-secondary">{{ loop.index }}</td>
-              <td class="fw-semibold">{{ stage.TaskStageDef_Type }}</td>
-              <td class="text-secondary">{{ stage.TaskStageDef_Description }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-
-        </table>
-      </div>
-    </div>
-  </div>
-
+  <!-- Workflow Stages (now using Tabler's Timeline design) -->
   <div class="col-12">
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Run this agent</h3>
-      </div>
+    <div class="card bg-transparent border-0">
+
       <div class="card-body">
-        <form method="POST" enctype="multipart/form-data" class="row g-3 align-items-end">
-
-          <!-- File Input -->
-          <div class="col-12 col-md-8">
-            <label class="form-label">Input files</label>
-            <input type="file" name="uploaded_file" class="form-control" multiple required>
-            <div class="form-hint">Supported: .txt, .csv, .pdf (Stage 0 normalises to plain text).</div>
-          </div>
-
-          <!-- Run Button -->
-          <div class="col-12 col-md-4">
-            <button class="btn btn-primary w-100">
-              <i class="ti ti-player-play me-2"></i>Run Agent
-            </button>
-          </div>
-
-        </form>
-      </div>
-    </div>
-  </div>
-
-{% if receipt %}
-<div class="col-12">
-  <div class="card">
-    <div class="card-header">
-      <h3 class="card-title">Run Receipt</h3>
-    </div>
-      <div class="card-body">
-        <div class="text-secondary mb-2">
-          {{ message or "This run was automatically deleted for privacy after inactivity." }}
-        </div>
-        {% if receipt_retention_hours %}
-        <div class="text-secondary small mb-3">
-          Receipts are retained for {{ receipt_retention_hours }} hours.
-        </div>
-        {% endif %}
-        <div class="row g-2">
-        <div class="col-12 col-md-6">
-          <div class="text-secondary">Run ID</div>
-          <div class="fw-semibold">{{ receipt.TaskInstance_ID }}</div>
-        </div>
-        <div class="col-12 col-md-6">
-          <div class="text-secondary">Created</div>
-          <div class="fw-semibold">{{ receipt.Created_At }}</div>
-        </div>
-        <div class="col-12 col-md-6">
-          <div class="text-secondary">Deleted</div>
-          <div class="fw-semibold">{{ receipt.Deleted_At }}</div>
-        </div>
-        <div class="col-12 col-md-6">
-          <div class="text-secondary">Downloaded</div>
-          <div class="fw-semibold">{{ receipt.Downloaded_At or "—" }}</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-{% if stage_outputs and run_active %}
-  <div class="col-12">
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Stage Artifacts</h3>
-      </div>
-      <div class="card-body">
-        <div class="text-secondary mb-3">Download or preview outputs from each stage.</div>
-        {% if expires_in_minutes %}
-        <div class="text-secondary small mb-3">
-          Run expires in ~{{ expires_in_minutes }} minutes of inactivity.
-        </div>
-        {% endif %}
-        <div class="d-flex flex-wrap gap-2 mb-3">
-          {% if output_task_instance_id %}
-          <form method="post" action="{{ url_for('download_run', task_instance_id=output_task_instance_id) }}">
-            <button type="submit" class="btn btn-outline-primary btn-sm">
-              <i class="ti ti-download me-2"></i>Download run artifacts
-            </button>
-          </form>
-<form method="post" action="{{ url_for('delete_run', task_instance_id=output_task_instance_id) }}">
-            <button type="submit" class="btn btn-outline-danger btn-sm">
-              <i class="ti ti-trash me-2"></i>Delete run now
-            </button>
-          </form>
-          {% endif %}
-        </div>
-        {% for s in stage_outputs %}
-          <div class="mb-4">
-            <div class="d-flex align-items-center justify-content-between">
-              <div class="fw-semibold">Stage {{ s.order }}: {{ s.name }}</div>
-              <a class="btn btn-outline-secondary btn-sm"
-                 href="{{ url_for('artifact_file', task_instance_id=s.task_instance_id, filename=s.artifact_name) }}"
-                 download>
-                <i class="ti ti-download me-2"></i>Download
-              </a>
+        <ul class="timeline"> <!-- Timeline is from Tabler's library -->
+          {% for stage in stages %} 
+          <li class="timeline-event">
+            <div class="timeline-event-icon bg-primary-lt">
+              <i class="ti ti-circle-number-{{ loop.index }}"></i>  <!-- loop.index from Jinja2, we can use loop.index here because our flow run in sequence as well starting from 1... -->
             </div>
 
-            {% if s.output_type == "svg" %}
-              <div class="mt-2">
-                <img class="img-fluid" alt="SVG output"
-                     src="{{ url_for('artifact_file', task_instance_id=s.task_instance_id, filename=s.artifact_name) }}">
+            <div class="card timeline-event-card">
+              <div class="card-body">
+
+                <h4 class="mb-1">Stage {{ loop.index }}: {{ stage.TaskStageDef_Type.strip().title() }}</h4> <!-- .strip() removes whitespace .title() captilises the first letter -->
+                <p class="text-secondary mb-0">{{ stage.TaskStageDef_Description }}</p>
+
               </div>
-            {% elif s.output_type in ["text", "csv", "json"] and s.preview_text %}
-              <div class="mt-2">
-                <pre class="mb-0" style="white-space: pre-wrap;">{{ s.preview_text }}</pre>
-                {% if s.preview_truncated %}
-                  <div class="text-secondary small mt-1">Preview truncated. Download for full output.</div>
-                {% endif %}
-              </div>
-            {% else %}
-              <div class="text-secondary small mt-2">{{ s.artifact_name }}</div>
-            {% endif %}
-          </div>
-        {% endfor %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
       </div>
     </div>
   </div>
-  {% endif %}
 
 </div>
+
+<div class="mt-3">
+  {% if can_edit_flow %}
+  <a href="{{ url_for('flow_builder_edit_page', flow_id=process.Process_ID) }}" class="btn btn-primary w-100">
+    <i class="ti ti-player-play me-1"></i>Edit Plan
+  </a>
+  {% else %}
+  <a href="#" class="btn btn-secondary w-100 disabled" aria-disabled="true" tabindex="-1"
+     style="pointer-events: none; opacity: 0.65;" title="System-created plans cannot be edited.">
+    <i class="ti ti-lock me-1"></i>Edit Plan (System)
+  </a>
+  {% endif %}
+</div>
+
+<div class="mt-3">
+  <a href="{{ url_for('delete_flow', flow_id=process.Process_ID) }}" class="btn btn-primary w-100">
+    <i class="ti ti-player-play me-1"></i>Delete Plan
+  </a>
+</div>
+
 
 {% endblock %}

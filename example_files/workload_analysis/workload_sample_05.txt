@@ -1,8 +1,0 @@
-Owner: Kai
-Task: Task 5
-StartDate: 2026-01-25
-DueDate: 2026-02-22
-EffortHours: 34
-Priority: Medium
-Status: Done
-Project: Orion

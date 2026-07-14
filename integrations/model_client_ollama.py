@@ -1,70 +1,70 @@
-# ==========================================
-# File: model_client_ollama.py
-# Updated in iteration: 4
-# Author: Karl Concha
-#
-# Lightweight client for calling a locally hosted Ollama instance.
-#
-# Notes:
-# - Uses the /api/chat endpoint with stream=False
-# - Raises exceptions for HTTP/network errors so the runtime can mark stages FAILED
-#
-# #ChatGPT (OpenAI, 2025) – Assisted in structuring a minimal Ollama model
-# client abstraction with explicit error propagation to support safe
-# stop-on-failure behaviour during stage execution.
-# Conversation Topic: "Integrating Ollama into Rainn"
-# Date: January 2026
-#
-# Used by StageRunner to generate stage output within agent_runtime_service
-# ==========================================
-
 import requests
 
 class OllamaModelClient:
-    """
-    Minimal Ollama HTTP client for localhost.
-    """
 
     def __init__(self, host="http://localhost:11434", timeout_seconds=300):
         self.host = host.rstrip("/")
         self.timeout_seconds = timeout_seconds
 
-    def generate(self, model_name, prompt, system_prompt=None, json_mode=False):
+    # The function to send instructions and data to the model
+    def generate(self, model_name, prompt, system_prompt=None, json_mode=False, context=None):
         """
         Generate a single response from Ollama (non-streaming) with needed parameters given.
         If system_prompt is provided, it is sent as a top-level system instruction.
         If json_mode is True, Ollama is told to force JSON output (no prose or code fences).
         """
 
+        # Create an empty messages list
         messages = []
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": prompt})
 
+        #If a system prompt var has a value
+        if system_prompt:
+            # Add it to the messages list as a dictionary list
+            messages.append({"role": "system", "content": system_prompt})
+
+        # If context has a value or is not None
+        if context:
+            messages.extend(context)
+
+        # Add current prompt from outside to messages list
+        messages.append({"role": "user", "content": prompt}) 
+
+        #The packet of data to send to ollama
         payload = {
             "model": model_name,
             "messages": messages,
             "stream": False
-        } #The packet of data to send to ollama
+        } 
 
+        # If json_mode is not None or has a value
         if json_mode:
-            payload["format"] = "json" # Forces Ollama to return clean JSON — no prose, no code fences
+            # Forces Ollama to return clean JSON — no prose, no code fences
+            payload["format"] = "json" 
 
-        r = requests.post(
+        # Send the chat request to Ollama's /api/chat endpoint and wait up to timeout_seconds.
+        response = requests.post(
             f"{self.host}/api/chat",
             json=payload, #specifying the payload to be json
             timeout=self.timeout_seconds
         )
 
-        # If Ollama returns 4xx/5xx this will raise, and the runtime will mark stage FAILED.
-        r.raise_for_status()
 
-        data = r.json() if r.content else {} #converting JSON into a readable python object
-        message = data.get("message") or {}
-        response_text = (message.get("content") or "").strip() #response within the object is only collected
+        # If Ollama returns 4xx/5xx (error) this will raise, and the runtime will mark stage FAILED.
+        response.raise_for_status()
+
+
+        # converting JSON into a readable python object
+        response_converted  = response.json() if response.content else {} 
+
+        # Only retreive the "message" portion of the response
+        AI_message = response_converted.get("message") or {}
+
+        # Then get the "content" portion of the message
+        response_text = (AI_message.get("content") or "").strip() #
 
         if not response_text:
             # Empty responses are treated as failed stages.
             raise Exception("Ollama returned an empty response.")
 
+        # Retrun the "content"
         return response_text

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="page-header d-print-none mb-2">
+  <div class="d-flex align-items-center gap-2">
+    <a href="{{ url_for('flow_history_page') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="ti ti-arrow-left me-1"></i>Back
+    </a>
+    <h4 class="page-title mb-0">Run #{{ selected_run.TaskInstance_ID }}</h4>
+    {% if selected_run.Status == "COMPLETED" %}
+      <span class="badge bg-success-lt">Completed</span>
+    {% elif selected_run.Status == "FAILED" %}
+      <span class="badge bg-danger-lt">Failed</span>
+    {% else %}
+      <span class="badge bg-secondary-lt">{{ selected_run.Status }}</span>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Stage timeline -->
+<div class="card mt-3">
+  <div class="card-body">
+    <ul class="timeline">
+      {% for stage in instance_stages %}
+      <li class="timeline-event">
+        <div class="timeline-event-icon bg-primary-lt">
+          <i class="ti ti-circle-number-{{ loop.index }}"></i>
+        </div>
+        <div class="card timeline-event-card">
+          <div class="card-body">
+            <div class="float-end">
+              {% if stage.Status == "COMPLETED" %}
+                <span class="badge bg-success-lt">Completed</span>
+              {% elif stage.Status == "FAILED" %}
+                <span class="badge bg-danger-lt">Failed</span>
+              {% else %}
+                <span class="badge bg-secondary-lt">{{ stage.Status }}</span>
+              {% endif %}
+
+              {% if stage.Output_Artifact_Path %}
+                {% set filename = stage.Output_Artifact_Path.split('/')[-1] %}
+                <a href="/download/{{ selected_run.TaskInstance_ID }}/{{ filename }}" class="ms-2 small">
+                  <i class="ti ti-download me-1"></i>Download
+                </a>
+              {% endif %}
+            </div>
+            <h4 class="mb-1">Stage {{ loop.index }}: {{ stage.Stage_Name | title }}</h4>
+            {% if stage.Error_Message %}
+            <div class="text-danger small mt-1">
+              <i class="ti ti-alert-circle me-1"></i>Stage error
+            </div>
+            <pre class="small mt-1 mb-0" style="white-space: pre-wrap;">{{ stage.Error_Message }}</pre>
+            {% endif %}
+          </div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<!-- Final output -->
+{% if output_text %}
+<div class="card mt-3">
+  <div class="card-header">
+    <h3 class="card-title">Output</h3>
+  </div>
+  <div class="card-body">
+    {% if output_type == "svg" %}
+      {{ output_text | safe }}
+    {% else %}
+      <pre style="white-space: pre-wrap;">{{ output_text }}</pre>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

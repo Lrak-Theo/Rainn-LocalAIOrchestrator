@@ -1,7 +1,0 @@
-Owner,Task,StartDate,DueDate,EffortHours,Priority,Status,Project
-Ava,Task 45,2026-01-25,2026-03-15,40,Low,Done,Atlas
-Mia,Task 35,2026-01-27,2026-03-14,25,Low,Done,Orion
-Ava,Task 27,2026-01-28,2026-02-06,29,Medium,Review,Nimbus
-Ethan,Task 12,2026-01-29,2026-03-13,19,High,Done,Harbor
-Ethan,Task 28,2026-01-30,2026-02-17,22,Low,Not Started,Orion
-Ethan,Task 16,2026-01-28,2026-03-08,26,Medium,Not Started,Harbor

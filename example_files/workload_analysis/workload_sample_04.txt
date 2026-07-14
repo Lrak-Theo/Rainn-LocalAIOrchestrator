@@ -1,8 +1,0 @@
-Owner: Kai
-Task: Task 15
-StartDate: 2026-01-24
-DueDate: 2026-02-01
-EffortHours: 14
-Priority: Medium
-Status: Blocked
-Project: Orion

@@ -1,8 +1,0 @@
-Owner: Liam
-Task: Task 28
-StartDate: 2026-01-26
-DueDate: 2026-02-20
-EffortHours: 29
-Priority: High
-Status: Done
-Project: Atlas

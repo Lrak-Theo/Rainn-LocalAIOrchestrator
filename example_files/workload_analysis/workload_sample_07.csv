@@ -1,7 +1,0 @@
-Owner,Task,StartDate,DueDate,EffortHours,Priority,Status,Project
-Kai,Task 21,2026-01-23,2026-03-03,15,Medium,Blocked,Orion
-Mia,Task 39,2026-01-25,2026-03-07,2,High,In Progress,Atlas
-Noah,Task 47,2026-01-27,2026-03-03,37,Low,Review,Harbor
-Ethan,Task 2,2026-01-22,2026-02-18,16,Medium,In Progress,Orion
-Sofia,Task 38,2026-01-26,2026-03-02,37,High,Blocked,Harbor
-Sofia,Task 36,2026-01-26,2026-02-22,31,Medium,Blocked,Orion

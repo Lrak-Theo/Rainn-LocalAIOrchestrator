@@ -1,152 +1,79 @@
 {% extends "base.html" %}
 
-{% block title %}Rainn | Agents{% endblock %}
-
 {% block content %}
 
-<!-- ==========================================
-File: flow_selection_page.html
-Updated in iteration: 4
-Author: Karl Concha
+<div class="row row-cards">
+  {% for p in processes %}
+  
+  {% set task_def = taskdef_map.get(p.Operation_Selected) %}
+  <div class="col-sm-6 col-lg-3 mb-3">
+    <a href="{{ url_for('flow_viewer', process_id=p.Process_ID) }}" class="card d-flex flex-column text-reset text-decoration-none" style="height: 260px;">
+      <div class="card-header py-2" style="min-height: 78px;">
+        <div class="d-flex align-items-start gap-2">
+          <img src="{{ url_for('static', filename='images/Rainn_small_icon.png') }}"
+               alt="Rainn icon"
+               style="width: 24px; height: 24px; object-fit: contain; margin-top: 1px;">
+          <h3 class="card-title mb-0" style="font-size: 10pt; line-height: 1.2; min-height: 2.4em; max-height: 2.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+            {{ task_def.TaskDef_Name | replace("_", " " | title )}}
+          </h3>
+        </div>
 
-Purpose:
-List saved agent flows and provide primary actions.
-========================================== -->
-
-<div class="page-header d-print-none">
-  <div class="row g-2 align-items-center">
-    <div class="col">
-      <div class="page-pretitle">Agents</div>
-      <h2 class="page-title">My agent flows</h2>
-      <div class="text-secondary">Your customized agents and runs.</div>
-    </div>
-
-    <div class="col-auto ms-auto d-print-none">
-      <div class="btn-list">
-        <a href="{{ url_for('agent_builder_page') }}" class="btn btn-primary">
-          <i class="ti ti-plus me-2"></i>Create new flow
-        </a>
-        <form method="post"
-              action="{{ url_for('flow_import_page') }}"
-              enctype="multipart/form-data"
-              class="d-inline">
-          <input type="file"
-                 name="flow_file"
-                 accept=".json,application/json"
-                 class="d-none"
-                 id="import-flow-file">
-          <button type="button" class="btn btn-outline-secondary" id="import-flow-btn">
-            <i class="ti ti-upload me-2"></i>Import Flow
-          </button>
-        </form>
       </div>
-    </div>
+
+      <div class="card-body flex-fill pb-4">
+
+        <div class="text-secondary small rounded p-2 mb-3" style="min-height: 108px; max-height: 108px; overflow: hidden; font-family: monospace; font-size: 8pt; background: var(--tblr-bg-surface-secondary);">
+          {{ p.Agent_Priming | truncate(180) }}
+        </div>
+
+        <div class="d-flex text-secondary small gap-3">
+          <span><i class="ti ti-cpu me-1"></i>{{ p.AI_Model }}</span>
+        </div>
+
+      </div>
+    </a>
   </div>
+
+  {% endfor %}
 </div>
 
-{% if import_error or import_success %}
-<div class="alert {{ 'alert-success' if import_success else 'alert-danger' }}">
-  {% if import_success %}
-    Flow imported successfully{% if imported_process_id %}. New Process ID: {{ imported_process_id }}{% endif %}.
-  {% else %}
-    {{ import_error }}
-  {% endif %}
-</div>
+{% set toast_message = "" %}
+{% set toast_class = "alert-success" %}
+
+{% if ui_toast == "create_success" %}
+  {% set toast_message = "Plan created successfully!" %}
+
+{% elif ui_toast == "edit_success" %}
+  {% set toast_message = "Plan updated successfully!" %}
+
+{% elif ui_toast == "delete_success" %}
+  {% set toast_message = "Plan deleted successfully!" %}
+
+{% elif import_error %}
+  {% set toast_message = "Flow could not be imported! Wrong file structure!" %}
+  {% set toast_class = "alert-danger" %}
+
+{% elif import_success %}
+  {% set toast_message = "Plan imported successfully!" %}
 {% endif %}
 
-<div class="card">
-
-  <div class="card-body">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-      <div class="fw-semibold">Agent Processes</div>
-      <div class="text-secondary small">
-        Tip: click “Run” to upload an input file and execute stages 1..N.
-      </div>
-    </div>
-  </div>
-
-  <div class="table-responsive">
-    <table class="table card-table table-vcenter text-nowrap">
-
-      <thead>
-        <tr>
-          <th>Agent Name</th>
-          <th class="text-secondary">Model</th>
-          <th class="w-1"></th>
-        </tr>
-      </thead>
-
-      <tbody>
-      {% for p in processes %}
-        <tr>
-
-          <td>
-            <div class="fw-semibold">{{ p.Agent_Name }}</div>
-            <div class="text-secondary text-truncate" style="max-width: 520px;">
-              {{ p.Agent_Priming }}
-            </div>
-          </td>
-
-          <td>{{ p.AI_Model }}</td>
-
-          <td>
-            <div class="btn-list flex-nowrap">
-
-              <a href="{{ url_for('agent_runner_page', process_id=p.Process_ID) }}"
-                 class="btn btn-primary btn-sm">
-                <i class="ti ti-player-play me-1"></i>Run
-              </a>
-
-              <a href="{{ url_for('export_flow', process_id=p.Process_ID) }}"
-                 class="btn btn-outline-secondary btn-sm">
-                <i class="ti ti-download me-1"></i>Export
-              </a>
-
-              {% set td = taskdef_map.get(p.Operation_Selected) %}
-              {% if td and td.TaskDef_Name and td.TaskDef_Name.startswith("Custom - ") %}
-              <a href="{{ url_for('agent_builder_page', edit_process_id=p.Process_ID) }}"
-                 class="btn btn-outline-secondary btn-sm">
-                <i class="ti ti-edit me-1"></i>Edit
-              </a>
-              {% endif %}
-
-              <form method="POST"
-                    action="{{ url_for('delete_process', process_id=p.Process_ID) }}"
-                    style="display:inline;">
-                <button type="submit"
-                        class="btn btn-outline-danger btn-sm"
-                        onclick="return confirm('Delete this process?');">
-                  <i class="ti ti-trash me-1"></i>Delete
-                </button>
-              </form>
-
-            </div>
-          </td>
-
-        </tr>
-      {% endfor %}
-      </tbody>
-
-    </table>
+{% if toast_message %}
+<div id="importToastWrap"
+     class="position-fixed top-0 end-0 p-3"
+     style="z-index: 2000; width: min(320px, calc(100vw - 1rem));">
+  <div class="alert {{ toast_class }} shadow mb-0 py-2 px-3 small">
+    {{ toast_message }}
   </div>
 </div>
 
 <script>
-  (function () {
-    var importBtn = document.getElementById("import-flow-btn");
-    var importInput = document.getElementById("import-flow-file");
-    if (!importBtn || !importInput) {
-      return;
-    }
-    importBtn.addEventListener("click", function () {
-      importInput.click();
-    });
-    importInput.addEventListener("change", function () {
-      if (importInput.files && importInput.files.length > 0) {
-        importInput.form.submit();
-      }
-    });
-  })();
+  setTimeout(function () {
+    document.getElementById("importToastWrap")?.remove();
+  }, 5000);
 </script>
+{% endif %}
+
+
+
 
 {% endblock %}

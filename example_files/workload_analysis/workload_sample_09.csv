@@ -1,7 +1,0 @@
-Owner,Task,StartDate,DueDate,EffortHours,Priority,Status,Project
-Ava,Task 5,2026-01-27,2026-03-03,6,High,Not Started,Nimbus
-Noah,Task 37,2026-01-25,2026-02-05,17,Low,Done,Harbor
-Liam,Task 39,2026-01-30,2026-02-14,35,Medium,Review,Harbor
-Mia,Task 38,2026-01-27,2026-02-19,38,High,Not Started,Summit
-Sofia,Task 7,2026-01-24,2026-03-12,15,Medium,Not Started,Nimbus
-Noah,Task 12,2026-01-29,2026-02-04,12,Low,Review,Harbor

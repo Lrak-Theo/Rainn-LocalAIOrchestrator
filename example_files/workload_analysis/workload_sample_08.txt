@@ -1,8 +1,0 @@
-Owner: Ethan
-Task: Task 37
-StartDate: 2026-01-24
-DueDate: 2026-02-16
-EffortHours: 4
-Priority: High
-Status: Review
-Project: Atlas

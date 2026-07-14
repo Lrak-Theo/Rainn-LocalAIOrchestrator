@@ -1,8 +1,0 @@
-Owner: Kai
-Task: Task 27
-StartDate: 2026-01-31
-DueDate: 2026-02-15
-EffortHours: 19
-Priority: Low
-Status: Not Started
-Project: Harbor

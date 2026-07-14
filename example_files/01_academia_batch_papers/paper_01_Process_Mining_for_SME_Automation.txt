@@ -1,7 +1,0 @@
-Abstract: This paper (2021) investigates process mining for sme automation in the context of BIS. We propose a workflow combining event logs, conformance checking, automation ROI. Method: Causal inference with propensity matching. Dataset: Public benchmark dataset (n=50,000) plus internal holdout set. Metrics: NPV, PPV, sensitivity, specificity.
-
-Methods & Data: Causal inference with propensity matching. Public benchmark dataset (n=50,000) plus internal holdout set.
-
-Results: Results are strong but depend on aggressive preprocessing and exclusion criteria.
-
-Limitations: Small sample size for minority classes; confidence intervals are wide.

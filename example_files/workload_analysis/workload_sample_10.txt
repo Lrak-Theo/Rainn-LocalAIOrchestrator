@@ -1,8 +1,0 @@
-Owner: Sofia
-Task: Task 22
-StartDate: 2026-01-30
-DueDate: 2026-02-20
-EffortHours: 9
-Priority: High
-Status: Blocked
-Project: Summit

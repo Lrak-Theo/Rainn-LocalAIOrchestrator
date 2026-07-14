@@ -1,61 +1,63 @@
-# ==========================================
-# File: input_normaliser.py
-# Updated in iteration: 4
-# Author: Karl Concha
-#
-# - Read uploaded file (.txt / .pdf / .csv)
-# - NORMALISE extracted content to plain text for AI model to read
-# - Write initial artifact: 00_input_original.txt
-# 
-# #ChatGPT (OpenAI, 2025) – Assisted in structuring the Stage 0 input
-# normalisation process, defining the plain-text contract, and enforcing
-# artifact persistence (00_input_original.txt) for traceability.
-# Conversation Topic: "Input Normalisation and Artifact outputs"
-# Date: January 2026
-# Used in agent_runtime_servcice.py
-# ==========================================
-
 import os
-from task_logic.file_reader import FileReader
+from runtime_logic.input_stage_logic.file_reader import FileReader
 
 
 class InputNormaliser:
-    """
-    Stage 0 (Input) handler: read → normalise → persist as artifact.
-    """
+    # Why is input normaliser needed? In order to safely process all different forms of files into one format that the model can read
 
     @staticmethod
-    def run_multi(files, run_folder):
+    def run_multi(files, artifacts_directory, stage_index=1):
         """
-        Reads and normalises multiple uploaded files and writes 00_input_original.txt.
+        Reads and normalises multiple uploaded files and writes 01_stage_input_output.txt.
         Each file is separated with a clear header for traceability.
         """
 
         if not files:
             raise Exception("No files provided")
         
+        # Create an file list
         array_file = []
 
+
         for item in files:
-            file_name = item["name"] # Retreiving the name key in the files dict
-            file_path = item["path"] # Retreiving the path key in the files dict
 
-            text = FileReader.read_file(file_path)
+            # Retreiving the name key in the files dict
+            file_name = item["name"]
 
+            # Retreiving the path key in the files dict
+            file_path = item["path"] 
+
+            # Location where FileReader is used
+            text = FileReader.read_file(file_path) 
+
+            # Error handling...
             if not text:
                 raise Exception(f"No Content extracted from {file_name}")
+            
             if text == "[Unsupported file type]":
                 raise Exception(f"Unsupported file type: {file_name}")
+            
 
-            text = "\n".join(text.splitlines()).strip() 
             # Splitting text into a list of lines while joining the lines again using \n
-
+            text = "\n".join(text.splitlines()).strip() 
+           
+            # Combine the file name and text into one string into then adding it into the file array list
             array_file.append(f"{file_name}: \n{text}")
 
-        # Write input stage artifact for traceback purposes
+
+
+        # Write input stage artifact into now a string with sections
         text_combined = "\n\n".join(array_file)
-        artifact_path = os.path.join(run_folder, "input_original.txt")
+
+        # Assign the artifact filename into a variable 
+        artifact_filename = f"{stage_index:02d}_stage_input_output.txt"
+
+        # Then find the path
+        artifact_path = os.path.join(artifacts_directory, artifact_filename)
+
+        # Which is then written into the correct file path with the normalised string
         with open(artifact_path, "w", encoding="utf-8") as f:
             f.write(text_combined)
 
-        return text_combined, artifact_path
+        # while returning the artifact path
+        return artifact_path

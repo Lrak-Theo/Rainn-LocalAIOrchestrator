@@ -1,8 +1,0 @@
-Owner: Noah
-Task: Task 16
-StartDate: 2026-01-23
-DueDate: 2026-02-11
-EffortHours: 28
-Priority: Low
-Status: In Progress
-Project: Orion

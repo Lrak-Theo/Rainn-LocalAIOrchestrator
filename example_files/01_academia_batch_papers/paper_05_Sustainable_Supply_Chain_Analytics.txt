@@ -1,7 +1,0 @@
-Abstract: This paper (2024) investigates sustainable supply chain analytics in the context of Operations. We propose a workflow combining supplier risk, lead time, carbon metrics. Method: Topic modelling (BERTopic) + qualitative coding. Dataset: Hospital ward dataset (n=3,200 encounters). Metrics: NPV, PPV, sensitivity, specificity.
-
-Methods & Data: Topic modelling (BERTopic) + qualitative coding. Hospital ward dataset (n=3,200 encounters).
-
-Results: Benefits are concentrated in small SMEs; larger orgs show marginal gains.
-
-Limitations: Model performance degrades under concept drift over 6 months.
